@@ -1,0 +1,45 @@
+schema: spec-driven
+
+context: |
+  本仓库采用 SDD（Spec-Driven Development，规格驱动开发）方式，并使用前后端分离架构。
+
+  项目名称：exam
+
+  仓库目录约定：
+  - 前端根目录：exam-web
+  - 后端根目录：exam-service
+
+  技术栈：
+  - 前端：React + TypeScript
+  - 前端主流框架/工具：Vite、React Router、Axios、Ant Design
+  - 后端：Java、MyBatis、MySQL
+  - 后端主流框架/工具：Spring Boot、Spring MVC、Spring Validation、MyBatis-Plus、Maven、Lombok
+  - API 风格：REST
+
+  后端包结构约定：
+  - 根包名：cn.jack.exam
+  - 常用子包：controller、config、service、dto、mapper、util、entity、exception、common
+
+  架构指导原则：
+  - 以前后端解耦为目标，通过清晰的 REST 契约进行协作。
+  - 优先选择主流、稳定、成熟的框架与库。
+  - API 命名应以资源为中心，并在不同模块之间保持一致。
+  - 功能开发前，应先通过 OpenSpec 产物对齐需求、设计和任务。
+
+rules:
+  proposal:
+    - 必须明确说明本次变更影响 `exam-web`、`exam-service`，或同时影响两者。
+    - 涉及接口时，需写明受影响的 REST 端点、请求/响应 DTO，以及数据库影响。
+    - 提案内容需符合前后端分离原则，避免混淆 UI 职责与服务端职责。
+  specs:
+    - 需求应从用户可见行为或系统能力角度描述。
+    - 适用时需覆盖前端行为、后端处理逻辑与 API 契约相关场景。
+    - 描述归属时应显式使用 `exam-web` 与 `exam-service` 这两个目录名。
+  design:
+    - 设计文档需明确前后端交互边界与 REST API 契约。
+    - 需说明后端代码在 `cn.jack.exam` 包下的放置方式，以及子包职责划分。
+    - 涉及持久化变更时，需说明 MyBatis Mapper 设计与 MySQL 表结构调整。
+  tasks:
+    - 当变更同时影响前后端时，任务必须按 `exam-web` 与 `exam-service` 拆分。
+    - 后端变更适用时，应包含 API 契约、DTO、Mapper 和数据库相关任务。
+    - 任务中应包含前端行为、后端逻辑和联调验证项。

@@ -1,0 +1,59 @@
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local environment files
+.env
+.env.*
+!.env.example
+!.env.sample
+!.env.template
+
+# Frontend dependencies and build outputs
+node_modules/
+.pnpm-store/
+.npm/
+.yarn/
+.parcel-cache/
+.turbo/
+.next/
+.nuxt/
+.svelte-kit/
+.angular/
+.vite/
+dist/
+build/
+coverage/
+storybook-static/
+.cache/
+.eslintcache
+.stylelintcache
+
+# Java / JVM backend outputs
+.gradle/
+target/
+out/
+*.class
+hs_err_pid*
+replay_pid*
+
+# Python backend cache and virtual envs
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+
+# IntelliJ IDEA local files
+*.iml
+.idea
