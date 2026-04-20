@@ -8,6 +8,10 @@ spring:
     init:
       mode: always
 
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger{0} : %msg%n"
+
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
   configuration:

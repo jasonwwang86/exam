@@ -126,3 +126,7 @@ cd exam-web && npm test
 # 前端构建
 cd exam-web && npm run build
 ```
+
+## 测试用户
+
+测试环境用户 admin：Admin@123456
