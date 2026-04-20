@@ -1,0 +1,61 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.hero {
+  padding: 28px;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at top right, rgba(249, 204, 122, 0.28), transparent 24%),
+    linear-gradient(135deg, #fff8ea 0%, #f5fbf5 100%);
+  border: 1px solid rgba(33, 48, 40, 0.08);
+}
+
+.title {
+  margin: 0;
+  font-size: 32px;
+  color: #203128;
+}
+
+.description {
+  margin: 12px 0 0;
+  max-width: 620px;
+  font-size: 15px;
+  line-height: 1.8;
+  color: #5d695f;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.card {
+  padding: 22px;
+  border-radius: 22px;
+  border: 1px solid rgba(33, 48, 40, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.cardTitle {
+  margin: 0 0 10px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #24382d;
+}
+
+.cardText {
+  margin: 0;
+  color: #69766d;
+  line-height: 1.75;
+  font-size: 14px;
+}
+
+@media (max-width: 860px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

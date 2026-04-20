@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.jack.exam.mapper.AdminPermissionMapper">
+
+    <select id="findByUserId" resultType="cn.jack.exam.entity.AdminPermission">
+        select distinct p.id,
+               p.permission_code,
+               p.permission_name,
+               p.permission_type,
+               p.path
+        from admin_permission p
+        inner join admin_role_permission rp on rp.permission_id = p.id
+        inner join admin_user_role ur on ur.role_id = rp.role_id
+        where ur.user_id = #{userId}
+    </select>
+</mapper>
