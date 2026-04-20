@@ -85,9 +85,22 @@ npm run build
 
 当前前端请求使用相对路径 `/api/...`，代码位于 `exam-web/src/modules/auth/services/authApi.ts`。
 
-当前仓库中的 `exam-web/vite.config.ts` 还没有配置本地开发代理，因此仅分别启动前后端时，浏览器中的 `/api` 请求不会自动转发到 `exam-service`。
+当前仓库中的 `exam-web/vite.config.ts` 已配置开发代理，会将 `/api` 请求默认转发到 `http://127.0.0.1:8080`。
 
-如果要进行前后端本地联调，建议采用以下任一方式：
+如果你的后端不是运行在 `http://127.0.0.1:8080`，可以在启动前端前覆盖代理目标：
+
+```bash
+cd exam-web
+EXAM_WEB_API_PROXY_TARGET=http://127.0.0.1:9090 npm run dev
+```
+
+补充说明：
+
+1. 浏览器开发者工具中看到的请求地址仍然会是前端站点地址，例如 `http://localhost:5173/api/admin/auth/login`。
+2. 这是因为浏览器先请求 Vite 开发服务器，再由 Vite 在服务端代理转发到后端目标地址。
+3. 只要代理生效，请求不会再停留在前端开发服务器本身处理，也不会再出现当前这类 404。
+
+如果要进行前后端本地联调，仍建议采用以下任一方式：
 
 1. 在 Vite 中增加 `/api` 到后端 `http://127.0.0.1:8080` 的代理配置。
 2. 使用 Nginx、网关或其他反向代理，将前端与后端统一到同一域名下访问。
