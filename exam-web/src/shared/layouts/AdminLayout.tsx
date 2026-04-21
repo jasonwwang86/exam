@@ -13,7 +13,7 @@ export function AdminLayout({ currentUser, onLogout, children }: AdminLayoutProp
   const location = useLocation();
   const activeMenu = currentUser.menus.find((menu) => location.pathname === menu.path || location.pathname.startsWith(`${menu.path}/`)) ?? null;
   const selectedMenuKey = activeMenu?.path ?? '';
-  const workspaceTabs = activeMenu ? ['工作台', activeMenu.name] : ['工作台'];
+  const workspaceTabs = activeMenu ? [activeMenu.name] : ['工作台'];
 
   return (
     <Layout className={styles.shell}>
