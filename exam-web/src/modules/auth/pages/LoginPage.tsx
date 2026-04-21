@@ -28,9 +28,6 @@ export function LoginPage({
             <Typography.Title level={1} className={styles.title}>
               管理员登录
             </Typography.Title>
-            <Typography.Title level={2} className={styles.platformTitle}>
-              企业管理台
-            </Typography.Title>
             <Typography.Paragraph className={styles.formDescription}>
               输入管理员账号与密码后进入统一工作区，当前登录流程、鉴权逻辑与权限体系保持不变。
             </Typography.Paragraph>

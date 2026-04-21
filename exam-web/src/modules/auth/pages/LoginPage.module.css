@@ -28,12 +28,6 @@
   color: var(--admin-text) !important;
 }
 
-.platformTitle {
-  margin: 0 !important;
-  font-size: 24px !important;
-  color: var(--admin-text) !important;
-}
-
 .formIntro {
   display: grid;
   gap: 8px;
