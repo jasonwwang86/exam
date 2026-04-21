@@ -1,6 +1,7 @@
 drop table if exists admin_role_permission;
 drop table if exists admin_user_role;
 drop table if exists admin_session;
+drop table if exists examinee;
 drop table if exists admin_permission;
 drop table if exists admin_role;
 drop table if exists admin_user;
@@ -46,4 +47,19 @@ create table admin_session (
     expires_at timestamp not null,
     last_active_at timestamp not null,
     revoked tinyint not null default 0
+);
+
+create table examinee (
+    id bigint primary key auto_increment,
+    examinee_no varchar(64) not null unique,
+    name varchar(64) not null,
+    gender varchar(16) not null,
+    id_card_no varchar(32) not null unique,
+    phone varchar(32) not null,
+    email varchar(128),
+    status varchar(16) not null,
+    remark varchar(255),
+    deleted tinyint not null default 0,
+    created_at timestamp not null,
+    updated_at timestamp not null
 );

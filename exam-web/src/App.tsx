@@ -4,6 +4,7 @@ import { fetchCurrentUser, login as loginRequest, logout as logoutRequest } from
 import type { CurrentUser, LoginFormState } from './modules/auth/types';
 import { LoginPage } from './modules/auth/pages/LoginPage';
 import { DashboardPage } from './modules/dashboard/pages/DashboardPage';
+import { ExamineeManagementPage } from './modules/examinees/pages/ExamineeManagementPage';
 import { NoPermissionPage } from './modules/system/pages/NoPermissionPage';
 import { LoadingPage } from './modules/system/pages/LoadingPage';
 import { TOKEN_STORAGE_KEY } from './shared/constants/storage';
@@ -21,6 +22,7 @@ function AdminAuthApp() {
   const navigate = useNavigate();
   const [form, setForm] = useState<LoginFormState>({ username: '', password: '' });
   const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [accessToken, setAccessToken] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
@@ -40,10 +42,12 @@ function AdminAuthApp() {
     try {
       const user = await fetchCurrentUser(token);
       setCurrentUser(user);
-      navigate(user.permissions.includes('dashboard:view') ? '/dashboard' : '/no-permission', { replace: true });
+      setAccessToken(token);
+      navigate(resolvePostAuthPath(user, window.location.pathname), { replace: true });
     } catch {
       window.localStorage.removeItem(TOKEN_STORAGE_KEY);
       setCurrentUser(null);
+      setAccessToken('');
       navigate('/login', { replace: true });
     } finally {
       setLoading(false);
@@ -60,10 +64,12 @@ function AdminAuthApp() {
     try {
       const response = await loginRequest(form);
       window.localStorage.setItem(TOKEN_STORAGE_KEY, response.token);
+      setAccessToken(response.token);
       await restoreSession(response.token);
     } catch {
       window.localStorage.removeItem(TOKEN_STORAGE_KEY);
       setCurrentUser(null);
+      setAccessToken('');
       setErrorMessage('用户名或密码错误');
       setLoading(false);
     } finally {
@@ -78,6 +84,7 @@ function AdminAuthApp() {
     }
     window.localStorage.removeItem(TOKEN_STORAGE_KEY);
     setCurrentUser(null);
+    setAccessToken('');
     setForm({ username: '', password: '' });
     setErrorMessage('');
     navigate('/login', { replace: true });
@@ -101,16 +108,45 @@ function AdminAuthApp() {
   }
 
   const canViewDashboard = currentUser.permissions.includes('dashboard:view');
+  const canViewExaminees = currentUser.permissions.includes('examinee:view');
+  const defaultAuthorizedPath = getDefaultAuthorizedPath(currentUser);
 
   return (
     <AdminLayout currentUser={currentUser} onLogout={() => void handleLogout()}>
       <Routes>
-        <Route path="/login" element={<Navigate to={canViewDashboard ? '/dashboard' : '/no-permission'} replace />} />
-        <Route path="/" element={<Navigate to={canViewDashboard ? '/dashboard' : '/no-permission'} replace />} />
+        <Route path="/login" element={<Navigate to={defaultAuthorizedPath} replace />} />
+        <Route path="/" element={<Navigate to={defaultAuthorizedPath} replace />} />
         <Route path="/dashboard" element={canViewDashboard ? <DashboardPage /> : <NoPermissionPage />} />
+        <Route
+          path="/examinees"
+          element={canViewExaminees ? <ExamineeManagementPage token={accessToken} permissions={currentUser.permissions} /> : <NoPermissionPage />}
+        />
         <Route path="/no-permission" element={<NoPermissionPage />} />
-        <Route path="*" element={<Navigate to={canViewDashboard ? '/dashboard' : '/no-permission'} replace />} />
+        <Route path="*" element={<Navigate to={defaultAuthorizedPath} replace />} />
       </Routes>
     </AdminLayout>
   );
+}
+
+function getDefaultAuthorizedPath(user: CurrentUser | null) {
+  if (!user) {
+    return '/login';
+  }
+  if (user.permissions.includes('dashboard:view')) {
+    return '/dashboard';
+  }
+  if (user.permissions.includes('examinee:view')) {
+    return '/examinees';
+  }
+  return '/no-permission';
+}
+
+function resolvePostAuthPath(user: CurrentUser, requestedPath: string) {
+  if (requestedPath === '/examinees' && user.permissions.includes('examinee:view')) {
+    return '/examinees';
+  }
+  if (requestedPath === '/dashboard' && user.permissions.includes('dashboard:view')) {
+    return '/dashboard';
+  }
+  return getDefaultAuthorizedPath(user);
 }

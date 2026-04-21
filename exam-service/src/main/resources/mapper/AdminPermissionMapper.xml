@@ -14,5 +14,6 @@
         inner join admin_role_permission rp on rp.permission_id = p.id
         inner join admin_user_role ur on ur.role_id = rp.role_id
         where ur.user_id = #{userId}
+        order by p.id asc
     </select>
 </mapper>

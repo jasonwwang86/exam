@@ -16,6 +16,10 @@ export function DashboardPage() {
           <h2 className={styles.cardTitle}>角色与权限</h2>
           <p className={styles.cardText}>基础菜单权限和接口权限已打通，可继续承接后续模块的授权控制。</p>
         </article>
+        <article className={styles.card}>
+          <h2 className={styles.cardTitle}>考生管理</h2>
+          <p className={styles.cardText}>统一主页面已预留业务模块入口，考生管理模块可在该框架下接入查询、维护与批量处理流程。</p>
+        </article>
       </div>
     </section>
   );

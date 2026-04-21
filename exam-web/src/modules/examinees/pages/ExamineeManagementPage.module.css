@@ -1,0 +1,187 @@
+.page {
+  display: grid;
+  gap: 20px;
+}
+
+.hero {
+  display: grid;
+  gap: 8px;
+  padding: 24px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fff4e6, #f7fbff);
+  border: 1px solid #f0d8b2;
+}
+
+.title {
+  margin: 0;
+  font-size: 28px;
+  color: #2e2a25;
+}
+
+.description {
+  margin: 0;
+  color: #5d544c;
+  line-height: 1.6;
+}
+
+.toolbar {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e9e1d7;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 12px;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+}
+
+.label {
+  font-size: 14px;
+  color: #544c45;
+}
+
+.input,
+.select,
+.fileInput,
+.textarea {
+  width: 100%;
+  border: 1px solid #d7cabc;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  background: #fffdf9;
+  box-sizing: border-box;
+}
+
+.textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.actions,
+.rowActions,
+.importActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.primaryButton,
+.secondaryButton,
+.dangerButton {
+  border: none;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.primaryButton {
+  background: #1f6a5a;
+  color: #fff;
+}
+
+.secondaryButton {
+  background: #f3ece4;
+  color: #3d362f;
+}
+
+.dangerButton {
+  background: #b94343;
+  color: #fff;
+}
+
+.panel {
+  padding: 20px;
+  border-radius: 18px;
+  background: #ffffff;
+  border: 1px solid #e9e1d7;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid #efe6dc;
+  text-align: left;
+  vertical-align: top;
+}
+
+.statusEnabled,
+.statusDisabled {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 72px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.statusEnabled {
+  background: #e7f6ef;
+  color: #216f57;
+}
+
+.statusDisabled {
+  background: #fce9e9;
+  color: #994343;
+}
+
+.form {
+  display: grid;
+  gap: 12px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.empty,
+.error,
+.helper {
+  margin: 0;
+  color: #685f57;
+}
+
+.error {
+  color: #a33f3f;
+}
+
+@media (max-width: 720px) {
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+  }
+
+  .table thead {
+    display: none;
+  }
+
+  .table tr {
+    padding: 12px 0;
+    border-bottom: 1px solid #efe6dc;
+  }
+
+  .table td {
+    border: none;
+    padding: 6px 0;
+  }
+}

@@ -23,6 +23,8 @@ public final class LogSanitizer {
                 .replaceAll("(?i)\"passwordHash\"\\s*:\\s*\"[^\"]*\"", "\"passwordHash\":\"" + REDACTED + "\"")
                 .replaceAll("(?i)\"token\"\\s*:\\s*\"[^\"]*\"", "\"token\":\"" + REDACTED + "\"")
                 .replaceAll("(?i)\"authorization\"\\s*:\\s*\"[^\"]*\"", "\"authorization\":\"" + REDACTED + "\"")
+                .replaceAll("(?i)\"idCardNo\"\\s*:\\s*\"[^\"]*\"", "\"idCardNo\":\"" + REDACTED + "\"")
+                .replaceAll("(?i)\"phone\"\\s*:\\s*\"[^\"]*\"", "\"phone\":\"" + REDACTED + "\"")
                 .replaceAll("(?i)Bearer\\s+[A-Za-z0-9._\\-]+", "Bearer " + REDACTED);
 
         if (sanitized.length() > MAX_BODY_LENGTH) {

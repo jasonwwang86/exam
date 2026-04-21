@@ -42,3 +42,20 @@ create table if not exists admin_session (
     last_active_at datetime not null,
     revoked tinyint not null default 0
 );
+
+create table if not exists examinee (
+    id bigint primary key auto_increment,
+    examinee_no varchar(64) not null,
+    name varchar(64) not null,
+    gender varchar(16) not null,
+    id_card_no varchar(32) not null,
+    phone varchar(32) not null,
+    email varchar(128),
+    status varchar(16) not null,
+    remark varchar(255),
+    deleted tinyint not null default 0,
+    created_at datetime not null,
+    updated_at datetime not null,
+    unique key uk_examinee_no (examinee_no),
+    unique key uk_examinee_id_card_no (id_card_no)
+);

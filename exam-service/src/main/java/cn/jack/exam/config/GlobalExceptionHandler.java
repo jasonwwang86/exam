@@ -2,6 +2,7 @@ package cn.jack.exam.config;
 
 import cn.jack.exam.exception.UnauthorizedException;
 import cn.jack.exam.exception.ForbiddenException;
+import cn.jack.exam.exception.BadRequestException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -48,5 +49,15 @@ public class GlobalExceptionHandler {
         return Map.of("message", exception.getBindingResult().getFieldError() == null
                 ? "Invalid request"
                 : exception.getBindingResult().getFieldError().getDefaultMessage());
+    }
+
+    @ExceptionHandler(BadRequestException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Map<String, Object> handleBadRequest(BadRequestException exception) {
+        log.warn("traceNo={} event=bad_request_exception exceptionType={} message={}",
+                TraceContext.getTraceNo(),
+                exception.getClass().getSimpleName(),
+                exception.getMessage());
+        return Map.of("message", exception.getMessage());
     }
 }

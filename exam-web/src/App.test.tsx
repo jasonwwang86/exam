@@ -2,9 +2,12 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { App } from './App';
 
-const { mockPost, mockGet } = vi.hoisted(() => ({
+const { mockPost, mockGet, mockPut, mockDelete, mockPatch } = vi.hoisted(() => ({
   mockPost: vi.fn(),
   mockGet: vi.fn(),
+  mockPut: vi.fn(),
+  mockDelete: vi.fn(),
+  mockPatch: vi.fn(),
 }));
 
 vi.mock('axios', () => ({
@@ -12,6 +15,9 @@ vi.mock('axios', () => ({
     create: () => ({
       post: mockPost,
       get: mockGet,
+      put: mockPut,
+      delete: mockDelete,
+      patch: mockPatch,
     }),
   },
 }));
@@ -22,6 +28,9 @@ describe('App', () => {
     window.history.pushState({}, '', '/');
     mockPost.mockReset();
     mockGet.mockReset();
+    mockPut.mockReset();
+    mockDelete.mockReset();
+    mockPatch.mockReset();
   });
 
   it('shows admin login form when there is no authenticated session', () => {
@@ -185,5 +194,71 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: '管理员登录' })).toBeInTheDocument();
     expect(window.localStorage.getItem('admin_token')).toBeNull();
+  });
+
+  it('renders examinee module entry on the unified main page and can open the route', async () => {
+    window.localStorage.setItem('admin_token', 'token-examinee');
+    window.history.pushState({}, '', '/examinees');
+    mockGet
+      .mockResolvedValueOnce({
+        data: {
+          userId: 1,
+          username: 'admin',
+          displayName: '系统管理员',
+          roles: ['SUPER_ADMIN'],
+          permissions: [
+            'dashboard:view',
+            'dashboard:read',
+            'examinee:view',
+            'examinee:read',
+            'examinee:create',
+            'examinee:update',
+            'examinee:delete',
+            'examinee:status',
+            'examinee:import',
+            'examinee:export',
+          ],
+          menus: [
+            {
+              code: 'dashboard:view',
+              name: '管理首页',
+              path: '/dashboard',
+            },
+            {
+              code: 'examinee:view',
+              name: '考生管理',
+              path: '/examinees',
+            },
+          ],
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          total: 1,
+          page: 1,
+          pageSize: 10,
+          records: [
+            {
+              id: 1,
+              examineeNo: 'EX2026001',
+              name: '张三',
+              gender: 'MALE',
+              idCardNo: '110101199001010011',
+              phone: '13800000001',
+              email: 'zhangsan@example.com',
+              status: 'ENABLED',
+              remark: '首批考生',
+              updatedAt: '2026-04-21T10:00:00',
+            },
+          ],
+        },
+      });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '考生管理' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '管理首页' })).toHaveAttribute('href', '/dashboard');
+    expect(screen.getByRole('link', { name: '考生管理' })).toHaveAttribute('href', '/examinees');
+    expect(screen.getByText('张三')).toBeInTheDocument();
   });
 });
