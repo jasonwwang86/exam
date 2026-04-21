@@ -1,57 +1,31 @@
-.page {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-}
-
-.hero {
-  padding: 28px;
-  border-radius: 26px;
-  background:
-    radial-gradient(circle at top right, rgba(249, 204, 122, 0.28), transparent 24%),
-    linear-gradient(135deg, #fff8ea 0%, #f5fbf5 100%);
-  border: 1px solid rgba(33, 48, 40, 0.08);
-}
-
-.title {
-  margin: 0;
-  font-size: 32px;
-  color: #203128;
-}
-
-.description {
-  margin: 12px 0 0;
-  max-width: 620px;
-  font-size: 15px;
-  line-height: 1.8;
-  color: #5d695f;
-}
-
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
 }
 
+.metricCard {
+  height: 100%;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(247, 250, 255, 0.95)),
+    #ffffff;
+}
+
 .card {
-  padding: 22px;
-  border-radius: 22px;
-  border: 1px solid rgba(33, 48, 40, 0.08);
-  background: rgba(255, 255, 255, 0.78);
+  height: 100%;
+  background:
+    radial-gradient(circle at top right, rgba(22, 119, 255, 0.08), transparent 24%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
 }
 
 .cardTitle {
-  margin: 0 0 10px;
-  font-size: 15px;
-  font-weight: 700;
-  color: #24382d;
+  margin: 0 !important;
+  color: #172033 !important;
 }
 
 .cardText {
-  margin: 0;
-  color: #69766d;
-  line-height: 1.75;
-  font-size: 14px;
+  margin: 0 !important;
+  color: #5b6578;
 }
 
 @media (max-width: 860px) {

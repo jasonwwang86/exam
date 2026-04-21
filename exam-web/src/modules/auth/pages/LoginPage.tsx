@@ -1,3 +1,4 @@
+import { Alert, Button, Card, Form, Input, Space, Typography } from 'antd';
 import type { LoginFormState } from '../types';
 import styles from './LoginPage.module.css';
 
@@ -20,40 +21,53 @@ export function LoginPage({
 }: LoginPageProps) {
   return (
     <main className={styles.page}>
-      <section className={styles.card} aria-label="管理员登录区域">
-        <p className={styles.eyebrow}>Exam Admin</p>
-        <h1 className={styles.title}>管理员登录</h1>
-        <p className={styles.subtitle}>输入管理员账号和密码，进入基础权限与登录控制台。</p>
-        <form className={styles.form}>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="username">用户名</label>
-            <input
-              className={styles.input}
-              id="username"
-              name="username"
-              type="text"
-              autoComplete="username"
-              value={form.username}
-              onChange={(event) => onUsernameChange(event.target.value)}
-            />
-          </div>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="password">密码</label>
-            <input
-              className={styles.input}
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              value={form.password}
-              onChange={(event) => onPasswordChange(event.target.value)}
-            />
-          </div>
-          {errorMessage ? <p className={styles.error} role="alert">{errorMessage}</p> : null}
-          <button className={styles.submit} type="button" onClick={onSubmit} disabled={submitting}>
-            登录
-          </button>
-        </form>
+      <section className={styles.panel} aria-label="管理员登录区域">
+        <Card variant="borderless" className={styles.formCard}>
+          <Space direction="vertical" size={6} className={styles.formHeader}>
+            <div className={styles.brand}>
+              <div className={styles.brandMark}>E</div>
+              <div>
+                <Typography.Text className={styles.formEyebrow}>Exam Admin</Typography.Text>
+                <Typography.Title level={1} className={styles.title}>
+                  企业管理台
+                </Typography.Title>
+              </div>
+            </div>
+            <Typography.Title level={2} className={styles.formTitle}>
+              管理员登录
+            </Typography.Title>
+            <Typography.Paragraph className={styles.formText}>
+              输入管理员账号和密码，进入统一工作台。
+            </Typography.Paragraph>
+          </Space>
+
+          <Form layout="vertical" className={styles.form}>
+            <Form.Item label="用户名" htmlFor="username">
+              <Input
+                id="username"
+                name="username"
+                size="large"
+                autoComplete="username"
+                value={form.username}
+                onChange={(event) => onUsernameChange(event.target.value)}
+              />
+            </Form.Item>
+            <Form.Item label="密码" htmlFor="password">
+              <Input.Password
+                id="password"
+                name="password"
+                size="large"
+                autoComplete="current-password"
+                value={form.password}
+                onChange={(event) => onPasswordChange(event.target.value)}
+              />
+            </Form.Item>
+            {errorMessage ? <Alert type="error" showIcon role="alert" message={errorMessage} /> : null}
+            <Button aria-label="登录" type="primary" size="large" block onClick={onSubmit} loading={submitting}>
+              登录
+            </Button>
+          </Form>
+        </Card>
       </section>
     </main>
   );

@@ -1,5 +1,6 @@
-import { Link } from 'react-router-dom';
+import { Avatar, Button, Empty, Layout, Menu, Space, Typography } from 'antd';
 import type { PropsWithChildren } from 'react';
+import { NavLink, useLocation } from 'react-router-dom';
 import type { CurrentUser } from '../../modules/auth/types';
 import styles from './AdminLayout.module.css';
 
@@ -9,39 +10,74 @@ type AdminLayoutProps = PropsWithChildren<{
 }>;
 
 export function AdminLayout({ currentUser, onLogout, children }: AdminLayoutProps) {
+  const location = useLocation();
+  const selectedMenuKey =
+    currentUser.menus.find((menu) => location.pathname === menu.path || location.pathname.startsWith(`${menu.path}/`))?.path ?? '';
+
   return (
-    <main className={styles.shell}>
-      <div className={styles.frame}>
-        <header className={styles.header}>
-          <div className={styles.brand}>
-            <p className={styles.eyebrow}>Exam Admin</p>
-            <h1 className={styles.title}>管理端控制台</h1>
+    <Layout className={styles.shell}>
+      <Layout.Sider breakpoint="lg" collapsedWidth="0" width={248} className={styles.sider}>
+        <div className={styles.brand}>
+          <div className={styles.brandMark}>E</div>
+          <div>
+            <Typography.Text className={styles.brandEyebrow}>Exam Admin</Typography.Text>
+            <Typography.Title level={4} className={styles.brandTitle}>
+              管理工作台
+            </Typography.Title>
           </div>
-          <div className={styles.toolbar}>
-            <span className={styles.user}>{currentUser.displayName}</span>
-            <button className={styles.logout} type="button" onClick={onLogout}>
-              退出登录
-            </button>
-          </div>
-        </header>
-        <div className={styles.content}>
-          <aside className={styles.sidebar}>
-            <p className={styles.sidebarTitle}>导航菜单</p>
-            {currentUser.menus.length ? (
-              <nav className={styles.menu} aria-label="管理端菜单">
-                {currentUser.menus.map((menu) => (
-                  <Link key={menu.code} className={styles.menuLink} to={menu.path}>
-                    {menu.name}
-                  </Link>
-                ))}
-              </nav>
-            ) : (
-              <p className={styles.emptyMenu}>当前账号暂无可见菜单，请联系管理员分配权限。</p>
-            )}
-          </aside>
-          <section className={styles.main}>{children}</section>
         </div>
-      </div>
-    </main>
+        <Typography.Text className={styles.sidebarLabel}>业务导航</Typography.Text>
+        {currentUser.menus.length ? (
+          <Menu
+            mode="inline"
+            theme="dark"
+            selectedKeys={selectedMenuKey ? [selectedMenuKey] : []}
+            items={currentUser.menus.map((menu) => ({
+              key: menu.path,
+              label: (
+                <NavLink className={styles.menuLink} to={menu.path}>
+                  {menu.name}
+                </NavLink>
+              ),
+            }))}
+          />
+        ) : (
+          <div className={styles.emptyMenu}>
+            <Empty
+              image={Empty.PRESENTED_IMAGE_SIMPLE}
+              description={<span className={styles.emptyMenuText}>当前账号暂无可见菜单，请联系管理员分配权限。</span>}
+            />
+          </div>
+        )}
+      </Layout.Sider>
+
+      <Layout className={styles.workspace}>
+        <Layout.Header className={styles.header}>
+          <div>
+            <Typography.Text className={styles.headerKicker}>统一主页面</Typography.Text>
+            <Typography.Title level={3} className={styles.headerTitle}>
+              企业管理台
+            </Typography.Title>
+          </div>
+          <Space size={16} className={styles.headerActions}>
+            <div className={styles.userCard}>
+              <Avatar size={40} className={styles.avatar}>
+                {currentUser.displayName.slice(0, 1).toUpperCase()}
+              </Avatar>
+              <div>
+                <Typography.Text className={styles.userName}>{currentUser.displayName}</Typography.Text>
+                <Typography.Text className={styles.userRole}>{currentUser.username}</Typography.Text>
+              </div>
+            </div>
+            <Button type="primary" onClick={onLogout}>
+              退出登录
+            </Button>
+          </Space>
+        </Layout.Header>
+        <Layout.Content className={styles.content}>
+          <div className={styles.contentInner}>{children}</div>
+        </Layout.Content>
+      </Layout>
+    </Layout>
   );
 }

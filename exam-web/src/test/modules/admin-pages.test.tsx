@@ -17,9 +17,13 @@ describe('admin pages', () => {
     );
 
     expect(screen.getByRole('heading', { name: '管理员登录' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '企业管理台' })).toBeInTheDocument();
+    expect(screen.queryByText('统一认证入口')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '登录' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: '用户名' })).toHaveAttribute('autocomplete', 'username');
     expect(screen.getByLabelText('密码')).toHaveAttribute('autocomplete', 'current-password');
+    expect(screen.queryByText('业务导航')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '退出登录' })).not.toBeInTheDocument();
   });
 
   it('renders standalone dashboard page component', async () => {
@@ -28,9 +32,8 @@ describe('admin pages', () => {
     render(<DashboardPage />);
 
     expect(screen.getByRole('heading', { name: '管理首页' })).toBeInTheDocument();
-    expect(
-      screen.getByText('当前模块已经具备登录、鉴权、权限路由和基础日志链路能力，后续业务模块可以在这套基础之上继续扩展。'),
-    ).toBeInTheDocument();
+    expect(screen.queryByText('当前模块已经具备登录、鉴权、权限路由和基础日志链路能力，后续业务模块可以在这套基础之上继续扩展。')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '系统概览' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: '登录与鉴权' })).toBeInTheDocument();
   });
 

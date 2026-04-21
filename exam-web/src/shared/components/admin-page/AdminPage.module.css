@@ -1,0 +1,62 @@
+.page {
+  display: grid;
+  gap: 20px;
+}
+
+.hero {
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, rgba(22, 119, 255, 0.16), transparent 32%),
+    radial-gradient(circle at left center, rgba(14, 165, 233, 0.1), transparent 26%),
+    linear-gradient(135deg, #ffffff 0%, #f7fbff 56%, #eef5ff 100%);
+}
+
+.headerRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.kicker {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #1677ff;
+}
+
+.title {
+  margin: 0 !important;
+  color: #172033 !important;
+}
+
+.description {
+  margin: 0 !important;
+  max-width: 720px;
+  color: #5b6578;
+}
+
+.headerExtra {
+  flex-shrink: 0;
+}
+
+.section :global(.ant-card-head) {
+  min-height: auto;
+  padding-bottom: 0;
+}
+
+.sectionTitle {
+  margin: 0 !important;
+  color: #172033 !important;
+}
+
+.sectionDescription {
+  color: #7b8597;
+}
+
+@media (max-width: 900px) {
+  .headerRow {
+    flex-direction: column;
+  }
+}

@@ -37,9 +37,12 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: '管理员登录' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '企业管理台' })).toBeInTheDocument();
+    expect(screen.queryByText('统一认证入口')).not.toBeInTheDocument();
     expect(screen.getByLabelText('用户名')).toBeInTheDocument();
     expect(screen.getByLabelText('密码')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '登录' })).toBeInTheDocument();
+    expect(screen.queryByText('业务导航')).not.toBeInTheDocument();
   });
 
   it('stores token and enters dashboard after successful login', async () => {
@@ -119,6 +122,7 @@ describe('App', () => {
 
     expect(await screen.findByRole('heading', { name: '管理首页' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '管理首页' })).toHaveAttribute('href', '/dashboard');
+    expect(screen.getByRole('link', { name: '管理首页' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('clears invalid stored token and returns to login page', async () => {
@@ -259,6 +263,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: '考生管理' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: '管理首页' })).toHaveAttribute('href', '/dashboard');
     expect(screen.getByRole('link', { name: '考生管理' })).toHaveAttribute('href', '/examinees');
+    expect(screen.getByRole('link', { name: '考生管理' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByText('张三')).toBeInTheDocument();
   });
 });

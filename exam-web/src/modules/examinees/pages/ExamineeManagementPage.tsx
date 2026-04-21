@@ -1,4 +1,20 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Alert,
+  Button,
+  Dropdown,
+  Empty,
+  Form,
+  Input,
+  Modal,
+  Select,
+  Space,
+  Table,
+  Tag,
+  Typography,
+} from 'antd';
+import type { MenuProps } from 'antd';
+import type { ColumnsType } from 'antd/es/table';
 import type { ExamineeFormPayload, ExamineeRecord, ExamineeStatus, UpdateExamineePayload } from '../types';
 import {
   createExaminee,
@@ -9,6 +25,7 @@ import {
   updateExaminee,
   updateExamineeStatus,
 } from '../services/examineeApi';
+import { AdminPage, AdminPageSection } from '../../../shared/components/admin-page/AdminPage';
 import styles from './ExamineeManagementPage.module.css';
 
 type ExamineeManagementPageProps = {
@@ -35,7 +52,11 @@ export function ExamineeManagementPage({ token, permissions }: ExamineeManagemen
   const [errorMessage, setErrorMessage] = useState('');
   const [formErrorMessage, setFormErrorMessage] = useState('');
   const [importMessage, setImportMessage] = useState('');
+  const [importErrorMessage, setImportErrorMessage] = useState('');
   const [formOpen, setFormOpen] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [editingRecord, setEditingRecord] = useState<ExamineeRecord | null>(null);
   const [form, setForm] = useState<ExamineeFormPayload>(EMPTY_FORM);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -74,10 +95,15 @@ export function ExamineeManagementPage({ token, permissions }: ExamineeManagemen
     }
   }
 
-  function openCreateForm() {
-    setEditingRecord(null);
+  function resetFormState() {
     setForm(EMPTY_FORM);
+    setEditingRecord(null);
     setFormErrorMessage('');
+    setSaving(false);
+  }
+
+  function openCreateForm() {
+    resetFormState();
     setFormOpen(true);
   }
 
@@ -97,6 +123,24 @@ export function ExamineeManagementPage({ token, permissions }: ExamineeManagemen
     setFormOpen(true);
   }
 
+  function closeFormModal() {
+    setFormOpen(false);
+    resetFormState();
+  }
+
+  function openImportModal() {
+    setImportErrorMessage('');
+    setSelectedFile(null);
+    setImportOpen(true);
+  }
+
+  function closeImportModal() {
+    setImportOpen(false);
+    setSelectedFile(null);
+    setImportErrorMessage('');
+    setImporting(false);
+  }
+
   async function handleQuery() {
     await loadExaminees({ keyword, status });
   }
@@ -108,6 +152,7 @@ export function ExamineeManagementPage({ token, permissions }: ExamineeManagemen
     }
 
     setFormErrorMessage('');
+    setSaving(true);
     try {
       if (editingRecord) {
         const payload: UpdateExamineePayload = {
@@ -123,11 +168,11 @@ export function ExamineeManagementPage({ token, permissions }: ExamineeManagemen
       } else {
         await createExaminee(token, form);
       }
-      setFormOpen(false);
-      setForm(EMPTY_FORM);
+      closeFormModal();
       await loadExaminees({ keyword, status });
     } catch {
       setFormErrorMessage('保存考生失败，请稍后重试');
+      setSaving(false);
     }
   }
 
@@ -156,16 +201,20 @@ export function ExamineeManagementPage({ token, permissions }: ExamineeManagemen
 
   async function handleImport() {
     if (!selectedFile) {
-      setImportMessage('请先选择导入文件');
+      setImportErrorMessage('请先选择导入文件');
       return;
     }
 
+    setImportErrorMessage('');
+    setImporting(true);
     try {
       const result = await importExaminees(token, selectedFile);
       setImportMessage(`导入完成：成功 ${result.successCount} 条，失败 ${result.failureCount} 条`);
+      closeImportModal();
       await loadExaminees({ keyword, status });
     } catch {
-      setImportMessage('导入失败，请稍后重试');
+      setImportErrorMessage('导入失败，请稍后重试');
+      setImporting(false);
     }
   }
 
@@ -189,264 +238,289 @@ export function ExamineeManagementPage({ token, permissions }: ExamineeManagemen
     }
   }
 
+  const createMenuItems: NonNullable<MenuProps['items']> = useMemo(() => {
+    const items: NonNullable<MenuProps['items']> = [];
+    if (canCreate) {
+      items.push({
+        key: 'create',
+        label: '新增考生',
+      });
+    }
+    if (canImport) {
+      items.push({
+        key: 'import',
+        label: '导入文件',
+      });
+    }
+    return items;
+  }, [canCreate, canImport]);
+
+  function handleCreateMenuClick({ key }: { key: string }) {
+    if (key === 'create') {
+      openCreateForm();
+      return;
+    }
+    if (key === 'import') {
+      openImportModal();
+    }
+  }
+
+  const columns: ColumnsType<ExamineeRecord> = [
+    {
+      title: '考生编号',
+      dataIndex: 'examineeNo',
+      key: 'examineeNo',
+    },
+    {
+      title: '姓名',
+      dataIndex: 'name',
+      key: 'name',
+    },
+    {
+      title: '手机号',
+      dataIndex: 'phone',
+      key: 'phone',
+    },
+    {
+      title: '状态',
+      dataIndex: 'status',
+      key: 'status',
+      render: (value: ExamineeRecord['status']) =>
+        value === 'ENABLED' ? <Tag color="success">启用</Tag> : <Tag color="default">禁用</Tag>,
+    },
+    {
+      title: '操作',
+      key: 'actions',
+      render: (_, record) => (
+        <Space size="small" wrap>
+          {canUpdate ? (
+            <Button type="default" onClick={() => openEditForm(record)}>
+              编辑
+            </Button>
+          ) : null}
+          {canToggleStatus ? (
+            <Button type="default" onClick={() => void handleToggleStatus(record)}>
+              {record.status === 'ENABLED' ? '禁用' : '启用'}
+            </Button>
+          ) : null}
+          {canDelete ? (
+            <Button danger onClick={() => void handleDelete(record)}>
+              删除
+            </Button>
+          ) : null}
+        </Space>
+      ),
+    },
+  ];
+
+  const importMessageType = importMessage.startsWith('导入完成') ? 'success' : 'warning';
+
   if (!canRead) {
     return (
-      <section className={styles.page}>
-        <div className={styles.hero}>
-          <h1 className={styles.title}>考生管理</h1>
-          <p className={styles.description}>当前账号缺少考生查询权限，请联系管理员分配权限。</p>
-        </div>
-      </section>
+      <AdminPage>
+        <AdminPageSection title="考生管理">
+          <Alert showIcon type="warning" message="当前账号缺少考生查询权限，请联系管理员分配权限。" />
+        </AdminPageSection>
+      </AdminPage>
     );
   }
 
   return (
-    <section className={styles.page}>
-      <div className={styles.hero}>
-        <h1 className={styles.title}>考生管理</h1>
-        <p className={styles.description}>在统一主页面下维护考生基础信息、状态与批量导入导出，后续其他管理模块也沿用同一导航结构接入。</p>
-      </div>
-
-      <div className={styles.toolbar}>
+    <AdminPage>
+      <AdminPageSection
+        title="考生管理"
+        extra={
+          <Space wrap>
+            <Button onClick={() => void handleQuery()}>
+              查询
+            </Button>
+            {createMenuItems.length > 0 ? (
+              <Dropdown menu={{ items: createMenuItems, onClick: handleCreateMenuClick }} trigger={['click']}>
+                <Button type="primary">新增</Button>
+              </Dropdown>
+            ) : null}
+            {canExport ? (
+              <Button onClick={() => void handleExport()}>
+                导出当前结果
+              </Button>
+            ) : null}
+          </Space>
+        }
+      >
         <div className={styles.filters}>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="examinee-keyword">
-              关键字
+          <Form layout="vertical" className={styles.filterGrid}>
+            <Form.Item label="关键字">
+              <Input
+                id="examinee-keyword"
+                aria-label="关键字"
+                placeholder="请输入考生姓名或编号"
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+              />
+            </Form.Item>
+            <Form.Item label="状态">
+              <select
+                id="examinee-status"
+                aria-label="状态"
+                className={styles.nativeSelect}
+                value={status}
+                onChange={(event) => setStatus(event.target.value)}
+              >
+                <option value="">全部</option>
+                <option value="ENABLED">启用</option>
+                <option value="DISABLED">禁用</option>
+              </select>
+            </Form.Item>
+          </Form>
+        </div>
+
+        {importMessage ? <Alert className={styles.feedback} showIcon type={importMessageType} message={importMessage} /> : null}
+        {errorMessage ? <Alert className={styles.feedback} showIcon type="error" message={errorMessage} /> : null}
+      </AdminPageSection>
+
+      <AdminPageSection
+        title="考生列表"
+        extra={<Typography.Text type="secondary">当前结果 {records.length} 条</Typography.Text>}
+      >
+        <Table
+          rowKey="id"
+          columns={columns}
+          dataSource={records}
+          loading={loading}
+          pagination={false}
+          scroll={{ x: 720 }}
+          locale={{
+            emptyText: (
+              <Empty
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+                description={loading ? '正在加载考生数据...' : '当前筛选条件下暂无考生数据。'}
+              />
+            ),
+          }}
+        />
+      </AdminPageSection>
+
+      <Modal
+        destroyOnHidden
+        open={formOpen}
+        title={editingRecord ? '编辑考生' : '新增考生'}
+        okText={editingRecord ? '保存' : '创建'}
+        cancelText="取消"
+        confirmLoading={saving}
+        onOk={() => void handleSave()}
+        onCancel={closeFormModal}
+      >
+        <Form layout="vertical">
+          <div className={styles.formGrid}>
+            <Form.Item label="考生编号">
+              <Input
+                id="examinee-no"
+                aria-label="考生编号"
+                value={form.examineeNo}
+                disabled={Boolean(editingRecord)}
+                onChange={(event) => setForm((current) => ({ ...current, examineeNo: event.target.value }))}
+              />
+            </Form.Item>
+            <Form.Item label="姓名">
+              <Input
+                id="examinee-name"
+                aria-label="姓名"
+                value={form.name}
+                onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
+              />
+            </Form.Item>
+            <Form.Item label="性别">
+              <Select
+                id="examinee-gender"
+                aria-label="性别"
+                value={form.gender}
+                options={[
+                  { value: 'MALE', label: '男' },
+                  { value: 'FEMALE', label: '女' },
+                ]}
+                onChange={(value) => setForm((current) => ({ ...current, gender: value as ExamineeFormPayload['gender'] }))}
+              />
+            </Form.Item>
+            <Form.Item label="身份证号">
+              <Input
+                id="examinee-id-card"
+                aria-label="身份证号"
+                value={form.idCardNo}
+                onChange={(event) => setForm((current) => ({ ...current, idCardNo: event.target.value }))}
+              />
+            </Form.Item>
+            <Form.Item label="手机号">
+              <Input
+                id="examinee-phone"
+                aria-label="手机号"
+                value={form.phone}
+                onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
+              />
+            </Form.Item>
+            <Form.Item label="邮箱">
+              <Input
+                id="examinee-email"
+                aria-label="邮箱"
+                value={form.email}
+                onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
+              />
+            </Form.Item>
+            <Form.Item label="状态">
+              <Select
+                id="examinee-form-status"
+                aria-label="状态"
+                value={form.status}
+                options={[
+                  { value: 'ENABLED', label: '启用' },
+                  { value: 'DISABLED', label: '禁用' },
+                ]}
+                onChange={(value) => setForm((current) => ({ ...current, status: value as ExamineeFormPayload['status'] }))}
+              />
+            </Form.Item>
+          </div>
+          <Form.Item label="备注">
+            <Input.TextArea
+              id="examinee-remark"
+              aria-label="备注"
+              value={form.remark}
+              rows={4}
+              onChange={(event) => setForm((current) => ({ ...current, remark: event.target.value }))}
+            />
+          </Form.Item>
+        </Form>
+        {formErrorMessage ? <Alert showIcon type="error" message={formErrorMessage} role="alert" /> : null}
+      </Modal>
+
+      <Modal
+        destroyOnHidden
+        open={importOpen}
+        title="导入考生文件"
+        okText="开始导入"
+        cancelText="取消"
+        confirmLoading={importing}
+        onOk={() => void handleImport()}
+        onCancel={closeImportModal}
+      >
+        <div className={styles.importPanel}>
+          <div className={styles.importPanelBox}>
+            <label className={styles.fileLabel} htmlFor="examinee-import-file">
+              导入文件
             </label>
             <input
-              id="examinee-keyword"
-              className={styles.input}
-              value={keyword}
-              onChange={(event) => setKeyword(event.target.value)}
+              id="examinee-import-file"
+              className={styles.fileInput}
+              aria-label="导入文件"
+              type="file"
+              accept=".xlsx"
+              onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
             />
-          </div>
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="examinee-status">
-              状态
-            </label>
-            <select
-              id="examinee-status"
-              className={styles.select}
-              value={status}
-              onChange={(event) => setStatus(event.target.value)}
-            >
-              <option value="">全部</option>
-              <option value="ENABLED">启用</option>
-              <option value="DISABLED">禁用</option>
-            </select>
+            <Typography.Text type="secondary">
+              {selectedFile ? `已选择：${selectedFile.name}` : '请选择 Excel 文件后提交导入。'}
+            </Typography.Text>
           </div>
         </div>
-        <div className={styles.actions}>
-          <button className={styles.secondaryButton} type="button" onClick={() => void handleQuery()}>
-            查询
-          </button>
-          {canCreate ? (
-            <button className={styles.primaryButton} type="button" onClick={openCreateForm}>
-              新增考生
-            </button>
-          ) : null}
-          {canExport ? (
-            <button className={styles.secondaryButton} type="button" onClick={() => void handleExport()}>
-              导出当前结果
-            </button>
-          ) : null}
-        </div>
-        {canImport ? (
-          <div className={styles.importActions}>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="examinee-import-file">
-                导入文件
-              </label>
-              <input
-                id="examinee-import-file"
-                className={styles.fileInput}
-                aria-label="导入文件"
-                type="file"
-                accept=".xlsx"
-                onChange={(event) => setSelectedFile(event.target.files?.[0] ?? null)}
-              />
-            </div>
-            <button className={styles.secondaryButton} type="button" onClick={() => void handleImport()}>
-              开始导入
-            </button>
-          </div>
-        ) : null}
-        {importMessage ? <p className={styles.helper}>{importMessage}</p> : null}
-        {errorMessage ? <p className={styles.error}>{errorMessage}</p> : null}
-      </div>
-
-      {formOpen ? (
-        <div className={styles.panel}>
-          <div className={styles.form}>
-            <h2>{editingRecord ? '编辑考生' : '新增考生'}</h2>
-            <div className={styles.formGrid}>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="examinee-no">
-                  考生编号
-                </label>
-                <input
-                  id="examinee-no"
-                  className={styles.input}
-                  value={form.examineeNo}
-                  disabled={Boolean(editingRecord)}
-                  onChange={(event) => setForm((current) => ({ ...current, examineeNo: event.target.value }))}
-                />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="examinee-name">
-                  姓名
-                </label>
-                <input
-                  id="examinee-name"
-                  className={styles.input}
-                  value={form.name}
-                  onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))}
-                />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="examinee-gender">
-                  性别
-                </label>
-                <select
-                  id="examinee-gender"
-                  className={styles.select}
-                  value={form.gender}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, gender: event.target.value as ExamineeFormPayload['gender'] }))
-                  }
-                >
-                  <option value="MALE">男</option>
-                  <option value="FEMALE">女</option>
-                </select>
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="examinee-id-card">
-                  身份证号
-                </label>
-                <input
-                  id="examinee-id-card"
-                  className={styles.input}
-                  value={form.idCardNo}
-                  onChange={(event) => setForm((current) => ({ ...current, idCardNo: event.target.value }))}
-                />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="examinee-phone">
-                  手机号
-                </label>
-                <input
-                  id="examinee-phone"
-                  className={styles.input}
-                  value={form.phone}
-                  onChange={(event) => setForm((current) => ({ ...current, phone: event.target.value }))}
-                />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="examinee-email">
-                  邮箱
-                </label>
-                <input
-                  id="examinee-email"
-                  className={styles.input}
-                  value={form.email}
-                  onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
-                />
-              </div>
-              <div className={styles.field}>
-                <label className={styles.label} htmlFor="examinee-form-status">
-                  状态
-                </label>
-                <select
-                  id="examinee-form-status"
-                  className={styles.select}
-                  value={form.status}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, status: event.target.value as ExamineeFormPayload['status'] }))
-                  }
-                >
-                  <option value="ENABLED">启用</option>
-                  <option value="DISABLED">禁用</option>
-                </select>
-              </div>
-            </div>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="examinee-remark">
-                备注
-              </label>
-              <textarea
-                id="examinee-remark"
-                className={styles.textarea}
-                value={form.remark}
-                onChange={(event) => setForm((current) => ({ ...current, remark: event.target.value }))}
-              />
-            </div>
-            {formErrorMessage ? (
-              <p role="alert" className={styles.error}>
-                {formErrorMessage}
-              </p>
-            ) : null}
-            <div className={styles.actions}>
-              <button className={styles.primaryButton} type="button" onClick={() => void handleSave()}>
-                保存考生
-              </button>
-              <button className={styles.secondaryButton} type="button" onClick={() => setFormOpen(false)}>
-                取消
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      <div className={styles.panel}>
-        {loading ? <p className={styles.helper}>正在加载考生数据...</p> : null}
-        {!loading && records.length === 0 ? <p className={styles.empty}>当前筛选条件下暂无考生数据。</p> : null}
-        {!loading && records.length > 0 ? (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th>考生编号</th>
-                <th>姓名</th>
-                <th>手机号</th>
-                <th>状态</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              {records.map((record) => (
-                <tr key={record.id}>
-                  <td>{record.examineeNo}</td>
-                  <td>{record.name}</td>
-                  <td>{record.phone}</td>
-                  <td>
-                    <span className={record.status === 'ENABLED' ? styles.statusEnabled : styles.statusDisabled}>
-                      {record.status === 'ENABLED' ? '启用' : '禁用'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className={styles.rowActions}>
-                      {canUpdate ? (
-                        <button className={styles.secondaryButton} type="button" onClick={() => openEditForm(record)}>
-                          编辑
-                        </button>
-                      ) : null}
-                      {canToggleStatus ? (
-                        <button className={styles.secondaryButton} type="button" onClick={() => void handleToggleStatus(record)}>
-                          {record.status === 'ENABLED' ? '禁用' : '启用'}
-                        </button>
-                      ) : null}
-                      {canDelete ? (
-                        <button className={styles.dangerButton} type="button" onClick={() => void handleDelete(record)}>
-                          删除
-                        </button>
-                      ) : null}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : null}
-      </div>
-    </section>
+        {importErrorMessage ? <Alert className={styles.modalFeedback} showIcon type="warning" message={importErrorMessage} /> : null}
+      </Modal>
+    </AdminPage>
   );
 }
