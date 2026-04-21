@@ -1,4 +1,4 @@
-import { Alert, Button, Card, Form, Input, Space, Typography } from 'antd';
+import { Alert, Button, Form, Input, Typography } from 'antd';
 import type { LoginFormState } from '../types';
 import styles from './LoginPage.module.css';
 
@@ -21,25 +21,20 @@ export function LoginPage({
 }: LoginPageProps) {
   return (
     <main className={styles.page}>
-      <section className={styles.panel} aria-label="管理员登录区域">
-        <Card variant="borderless" className={styles.formCard}>
-          <Space direction="vertical" size={6} className={styles.formHeader}>
-            <div className={styles.brand}>
-              <div className={styles.brandMark}>E</div>
-              <div>
-                <Typography.Text className={styles.formEyebrow}>Exam Admin</Typography.Text>
-                <Typography.Title level={1} className={styles.title}>
-                  企业管理台
-                </Typography.Title>
-              </div>
-            </div>
-            <Typography.Title level={2} className={styles.formTitle}>
+      <section className={styles.shell} aria-label="管理员登录区域">
+        <section className={styles.formCard}>
+          <div className={styles.formIntro}>
+            <Typography.Text className={styles.formLabel}>系统登录入口</Typography.Text>
+            <Typography.Title level={1} className={styles.title}>
               管理员登录
             </Typography.Title>
-            <Typography.Paragraph className={styles.formText}>
-              输入管理员账号和密码，进入统一工作台。
+            <Typography.Title level={2} className={styles.platformTitle}>
+              企业管理台
+            </Typography.Title>
+            <Typography.Paragraph className={styles.formDescription}>
+              输入管理员账号与密码后进入统一工作区，当前登录流程、鉴权逻辑与权限体系保持不变。
             </Typography.Paragraph>
-          </Space>
+          </div>
 
           <Form layout="vertical" className={styles.form}>
             <Form.Item label="用户名" htmlFor="username">
@@ -48,6 +43,7 @@ export function LoginPage({
                 name="username"
                 size="large"
                 autoComplete="username"
+                placeholder="请输入管理员用户名"
                 value={form.username}
                 onChange={(event) => onUsernameChange(event.target.value)}
               />
@@ -58,6 +54,7 @@ export function LoginPage({
                 name="password"
                 size="large"
                 autoComplete="current-password"
+                placeholder="请输入密码"
                 value={form.password}
                 onChange={(event) => onPasswordChange(event.target.value)}
               />
@@ -67,7 +64,7 @@ export function LoginPage({
               登录
             </Button>
           </Form>
-        </Card>
+        </section>
       </section>
     </main>
   );

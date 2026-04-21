@@ -25,7 +25,7 @@ import {
   updateExaminee,
   updateExamineeStatus,
 } from '../services/examineeApi';
-import { AdminPage, AdminPageSection } from '../../../shared/components/admin-page/AdminPage';
+import { AdminPage, AdminPageHeader, AdminPageSection } from '../../../shared/components/admin-page/AdminPage';
 import styles from './ExamineeManagementPage.module.css';
 
 type ExamineeManagementPageProps = {
@@ -318,6 +318,7 @@ export function ExamineeManagementPage({ token, permissions }: ExamineeManagemen
   if (!canRead) {
     return (
       <AdminPage>
+        <AdminPageHeader title="考生管理" description="当前页面用于统一处理考生档案、导入导出与状态维护。" />
         <AdminPageSection title="考生管理">
           <Alert showIcon type="warning" message="当前账号缺少考生查询权限，请联系管理员分配权限。" />
         </AdminPageSection>
@@ -327,13 +328,53 @@ export function ExamineeManagementPage({ token, permissions }: ExamineeManagemen
 
   return (
     <AdminPage>
+      <AdminPageHeader title="考生管理" description="按关键字和状态快速筛选考生，并在统一工作区内完成新增、维护、导入和导出。" />
+
       <AdminPageSection
-        title="考生管理"
+        title="筛选条件"
+        description="优先确定当前查询范围，再进入列表区处理维护动作。"
         extra={
           <Space wrap>
             <Button onClick={() => void handleQuery()}>
               查询
             </Button>
+          </Space>
+        }
+      >
+        <Form layout="vertical" className={styles.filterGrid}>
+          <Form.Item label="关键字">
+            <Input
+              id="examinee-keyword"
+              aria-label="关键字"
+              placeholder="请输入考生姓名或编号"
+              value={keyword}
+              onChange={(event) => setKeyword(event.target.value)}
+            />
+          </Form.Item>
+          <Form.Item label="状态">
+            <select
+              id="examinee-status"
+              aria-label="状态"
+              className={styles.nativeSelect}
+              value={status}
+              onChange={(event) => setStatus(event.target.value)}
+            >
+              <option value="">全部</option>
+              <option value="ENABLED">启用</option>
+              <option value="DISABLED">禁用</option>
+            </select>
+          </Form.Item>
+        </Form>
+
+        {importMessage ? <Alert className={styles.feedback} showIcon type={importMessageType} message={importMessage} /> : null}
+        {errorMessage ? <Alert className={styles.feedback} showIcon type="error" message={errorMessage} /> : null}
+      </AdminPageSection>
+
+      <AdminPageSection
+        title="考生列表"
+        description="统一在列表区内处理新增、导入、导出和状态维护。"
+        extra={
+          <Space wrap className={styles.toolbar}>
             {createMenuItems.length > 0 ? (
               <Dropdown menu={{ items: createMenuItems, onClick: handleCreateMenuClick }} trigger={['click']}>
                 <Button type="primary">新增</Button>
@@ -344,45 +385,12 @@ export function ExamineeManagementPage({ token, permissions }: ExamineeManagemen
                 导出当前结果
               </Button>
             ) : null}
+            <Typography.Text type="secondary">当前结果 {records.length} 条</Typography.Text>
           </Space>
         }
       >
-        <div className={styles.filters}>
-          <Form layout="vertical" className={styles.filterGrid}>
-            <Form.Item label="关键字">
-              <Input
-                id="examinee-keyword"
-                aria-label="关键字"
-                placeholder="请输入考生姓名或编号"
-                value={keyword}
-                onChange={(event) => setKeyword(event.target.value)}
-              />
-            </Form.Item>
-            <Form.Item label="状态">
-              <select
-                id="examinee-status"
-                aria-label="状态"
-                className={styles.nativeSelect}
-                value={status}
-                onChange={(event) => setStatus(event.target.value)}
-              >
-                <option value="">全部</option>
-                <option value="ENABLED">启用</option>
-                <option value="DISABLED">禁用</option>
-              </select>
-            </Form.Item>
-          </Form>
-        </div>
-
-        {importMessage ? <Alert className={styles.feedback} showIcon type={importMessageType} message={importMessage} /> : null}
-        {errorMessage ? <Alert className={styles.feedback} showIcon type="error" message={errorMessage} /> : null}
-      </AdminPageSection>
-
-      <AdminPageSection
-        title="考生列表"
-        extra={<Typography.Text type="secondary">当前结果 {records.length} 条</Typography.Text>}
-      >
         <Table
+          className={styles.table}
           rowKey="id"
           columns={columns}
           dataSource={records}
