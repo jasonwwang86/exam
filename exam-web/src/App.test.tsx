@@ -37,8 +37,8 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: '管理员登录' })).toBeInTheDocument();
-    expect(screen.getByText('Exam Admin')).toBeInTheDocument();
-    expect(screen.getByText('输入管理员账号和密码，进入统一工作台。')).toBeInTheDocument();
+    expect(screen.getByText('系统登录入口')).toBeInTheDocument();
+    expect(screen.getByText('输入管理员账号与密码后进入统一工作区，当前登录流程、鉴权逻辑与权限体系保持不变。')).toBeInTheDocument();
     expect(screen.getByLabelText('用户名')).toBeInTheDocument();
     expect(screen.getByLabelText('密码')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '登录' })).toBeInTheDocument();
