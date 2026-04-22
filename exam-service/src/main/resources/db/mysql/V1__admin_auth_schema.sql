@@ -59,3 +59,29 @@ create table if not exists examinee (
     unique key uk_examinee_no (examinee_no),
     unique key uk_examinee_id_card_no (id_card_no)
 );
+
+create table if not exists question_type (
+    id bigint primary key auto_increment,
+    name varchar(64) not null,
+    answer_mode varchar(32) not null,
+    sort_order int not null,
+    remark varchar(255),
+    deleted tinyint not null default 0,
+    created_at datetime not null,
+    updated_at datetime not null,
+    unique key uk_question_type_name (name)
+);
+
+create table if not exists question (
+    id bigint primary key auto_increment,
+    stem varchar(1000) not null,
+    question_type_id bigint not null,
+    difficulty varchar(16) not null,
+    score decimal(6, 2) not null,
+    answer_config json not null,
+    deleted tinyint not null default 0,
+    created_at datetime not null,
+    updated_at datetime not null,
+    key idx_question_question_type_id (question_type_id),
+    key idx_question_difficulty (difficulty)
+);

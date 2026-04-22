@@ -5,6 +5,7 @@ import type { CurrentUser, LoginFormState } from './modules/auth/types';
 import { LoginPage } from './modules/auth/pages/LoginPage';
 import { DashboardPage } from './modules/dashboard/pages/DashboardPage';
 import { ExamineeManagementPage } from './modules/examinees/pages/ExamineeManagementPage';
+import { QuestionBankManagementPage } from './modules/question-bank/pages/QuestionBankManagementPage';
 import { NoPermissionPage } from './modules/system/pages/NoPermissionPage';
 import { LoadingPage } from './modules/system/pages/LoadingPage';
 import { TOKEN_STORAGE_KEY } from './shared/constants/storage';
@@ -109,6 +110,7 @@ function AdminAuthApp() {
 
   const canViewDashboard = currentUser.permissions.includes('dashboard:view');
   const canViewExaminees = currentUser.permissions.includes('examinee:view');
+  const canViewQuestionBank = currentUser.permissions.includes('question-bank:view');
   const defaultAuthorizedPath = getDefaultAuthorizedPath(currentUser);
 
   return (
@@ -120,6 +122,10 @@ function AdminAuthApp() {
         <Route
           path="/examinees"
           element={canViewExaminees ? <ExamineeManagementPage token={accessToken} permissions={currentUser.permissions} /> : <NoPermissionPage />}
+        />
+        <Route
+          path="/question-bank"
+          element={canViewQuestionBank ? <QuestionBankManagementPage token={accessToken} permissions={currentUser.permissions} /> : <NoPermissionPage />}
         />
         <Route path="/no-permission" element={<NoPermissionPage />} />
         <Route path="*" element={<Navigate to={defaultAuthorizedPath} replace />} />
@@ -138,6 +144,9 @@ function getDefaultAuthorizedPath(user: CurrentUser | null) {
   if (user.permissions.includes('examinee:view')) {
     return '/examinees';
   }
+  if (user.permissions.includes('question-bank:view')) {
+    return '/question-bank';
+  }
   return '/no-permission';
 }
 
@@ -147,6 +156,9 @@ function resolvePostAuthPath(user: CurrentUser, requestedPath: string) {
   }
   if (requestedPath === '/dashboard' && user.permissions.includes('dashboard:view')) {
     return '/dashboard';
+  }
+  if (requestedPath === '/question-bank' && user.permissions.includes('question-bank:view')) {
+    return '/question-bank';
   }
   return getDefaultAuthorizedPath(user);
 }

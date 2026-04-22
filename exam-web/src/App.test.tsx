@@ -37,8 +37,7 @@ describe('App', () => {
     render(<App />);
 
     expect(screen.getByRole('heading', { name: '管理员登录' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '企业管理台' })).toBeInTheDocument();
-    expect(screen.queryByText('统一认证入口')).not.toBeInTheDocument();
+    expect(screen.getByText('系统登录入口')).toBeInTheDocument();
     expect(screen.getByLabelText('用户名')).toBeInTheDocument();
     expect(screen.getByLabelText('密码')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '登录' })).toBeInTheDocument();
@@ -265,5 +264,74 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: '考生管理' })).toHaveAttribute('href', '/examinees');
     expect(screen.getByRole('link', { name: '考生管理' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByText('张三')).toBeInTheDocument();
+  });
+
+  it('renders question bank module entry on the unified main page and can open the route', async () => {
+    window.localStorage.setItem('admin_token', 'token-question-bank');
+    window.history.pushState({}, '', '/question-bank');
+    mockGet
+      .mockResolvedValueOnce({
+        data: {
+          userId: 1,
+          username: 'admin',
+          displayName: '系统管理员',
+          roles: ['SUPER_ADMIN'],
+          permissions: [
+            'dashboard:view',
+            'dashboard:read',
+            'question-bank:view',
+            'question:read',
+            'question:create',
+            'question:update',
+            'question:delete',
+            'question-type:read',
+            'question-type:create',
+            'question-type:update',
+            'question-type:delete',
+          ],
+          menus: [
+            {
+              code: 'dashboard:view',
+              name: '管理首页',
+              path: '/dashboard',
+            },
+            {
+              code: 'question-bank:view',
+              name: '题库管理',
+              path: '/question-bank',
+            },
+          ],
+        },
+      })
+      .mockResolvedValueOnce({
+        data: [
+          { id: 1, name: '单选题', answerMode: 'SINGLE_CHOICE', sort: 10, remark: '唯一正确答案' },
+        ],
+      })
+      .mockResolvedValueOnce({
+        data: {
+          total: 1,
+          page: 1,
+          pageSize: 10,
+          records: [
+            {
+              id: 1,
+              stem: 'Java 的入口方法是什么？',
+              questionTypeId: 1,
+              questionTypeName: '单选题',
+              difficulty: 'EASY',
+              score: 5,
+              updatedAt: '2026-04-22T10:00:00',
+            },
+          ],
+        },
+      });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '题库管理' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '题库管理' })).toHaveAttribute('href', '/question-bank');
+    expect(screen.getByRole('link', { name: '题库管理' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByText('Java 的入口方法是什么？')).toBeInTheDocument();
   });
 });

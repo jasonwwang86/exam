@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.jack.exam.mapper.QuestionMapper">
+
+    <sql id="QuestionFilter">
+        q.deleted = 0
+        and qt.deleted = 0
+        <if test="keyword != null and keyword != ''">
+            and q.stem like concat('%', #{keyword}, '%')
+        </if>
+        <if test="questionTypeId != null">
+            and q.question_type_id = #{questionTypeId}
+        </if>
+        <if test="difficulty != null and difficulty != ''">
+            and q.difficulty = #{difficulty}
+        </if>
+    </sql>
+
+    <select id="findPage" resultType="cn.jack.exam.dto.question.QuestionListItemResponse">
+        select q.id,
+               q.stem,
+               q.question_type_id,
+               qt.name as question_type_name,
+               q.difficulty,
+               q.score,
+               q.updated_at
+        from question q
+        inner join question_type qt on qt.id = q.question_type_id
+        where <include refid="QuestionFilter"/>
+        order by q.id asc
+        limit #{pageSize} offset #{offset}
+    </select>
+
+    <select id="countPage" resultType="long">
+        select count(1)
+        from question q
+        inner join question_type qt on qt.id = q.question_type_id
+        where <include refid="QuestionFilter"/>
+    </select>
+
+    <select id="countActiveByQuestionTypeId" resultType="long">
+        select count(1)
+        from question
+        where question_type_id = #{questionTypeId}
+          and deleted = 0
+    </select>
+</mapper>

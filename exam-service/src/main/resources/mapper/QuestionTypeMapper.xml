@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.jack.exam.mapper.QuestionTypeMapper">
+
+    <select id="findAllActive" resultType="cn.jack.exam.dto.question.QuestionTypeResponse">
+        select id,
+               name,
+               answer_mode,
+               sort_order,
+               remark
+        from question_type
+        where deleted = 0
+        order by sort_order asc, id asc
+    </select>
+</mapper>

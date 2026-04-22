@@ -1,6 +1,8 @@
 drop table if exists admin_role_permission;
 drop table if exists admin_user_role;
 drop table if exists admin_session;
+drop table if exists question;
+drop table if exists question_type;
 drop table if exists examinee;
 drop table if exists admin_permission;
 drop table if exists admin_role;
@@ -59,6 +61,29 @@ create table examinee (
     email varchar(128),
     status varchar(16) not null,
     remark varchar(255),
+    deleted tinyint not null default 0,
+    created_at timestamp not null,
+    updated_at timestamp not null
+);
+
+create table question_type (
+    id bigint primary key auto_increment,
+    name varchar(64) not null unique,
+    answer_mode varchar(32) not null,
+    sort_order int not null,
+    remark varchar(255),
+    deleted tinyint not null default 0,
+    created_at timestamp not null,
+    updated_at timestamp not null
+);
+
+create table question (
+    id bigint primary key auto_increment,
+    stem varchar(1000) not null,
+    question_type_id bigint not null,
+    difficulty varchar(16) not null,
+    score decimal(6, 2) not null,
+    answer_config clob not null,
     deleted tinyint not null default 0,
     created_at timestamp not null,
     updated_at timestamp not null
