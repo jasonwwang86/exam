@@ -17,7 +17,8 @@ describe('admin pages', () => {
     );
 
     expect(screen.getByRole('heading', { name: '管理员登录' })).toBeInTheDocument();
-    expect(screen.getByText('系统登录入口')).toBeInTheDocument();
+    expect(screen.getByText('Exam Admin')).toBeInTheDocument();
+    expect(screen.getByText('输入管理员账号和密码，进入统一工作台。')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '登录' })).toBeInTheDocument();
     expect(screen.getByRole('textbox', { name: '用户名' })).toHaveAttribute('autocomplete', 'username');
     expect(screen.getByLabelText('密码')).toHaveAttribute('autocomplete', 'current-password');
