@@ -1,6 +1,8 @@
 drop table if exists admin_role_permission;
 drop table if exists admin_user_role;
 drop table if exists admin_session;
+drop table if exists paper_question;
+drop table if exists paper;
 drop table if exists question;
 drop table if exists question_type;
 drop table if exists examinee;
@@ -84,6 +86,32 @@ create table question (
     difficulty varchar(16) not null,
     score decimal(6, 2) not null,
     answer_config clob not null,
+    deleted tinyint not null default 0,
+    created_at timestamp not null,
+    updated_at timestamp not null
+);
+
+create table paper (
+    id bigint primary key auto_increment,
+    name varchar(128) not null unique,
+    description varchar(500),
+    duration_minutes int not null,
+    total_score decimal(8, 2) not null,
+    remark varchar(255),
+    deleted tinyint not null default 0,
+    created_at timestamp not null,
+    updated_at timestamp not null
+);
+
+create table paper_question (
+    id bigint primary key auto_increment,
+    paper_id bigint not null,
+    question_id bigint not null,
+    question_stem_snapshot varchar(1000) not null,
+    question_type_name_snapshot varchar(64) not null,
+    difficulty_snapshot varchar(16) not null,
+    item_score decimal(8, 2) not null,
+    display_order int not null,
     deleted tinyint not null default 0,
     created_at timestamp not null,
     updated_at timestamp not null

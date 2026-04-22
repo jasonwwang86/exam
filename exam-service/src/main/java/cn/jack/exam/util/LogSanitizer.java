@@ -25,6 +25,7 @@ public final class LogSanitizer {
                 .replaceAll("(?i)\"authorization\"\\s*:\\s*\"[^\"]*\"", "\"authorization\":\"" + REDACTED + "\"")
                 .replaceAll("(?i)\"idCardNo\"\\s*:\\s*\"[^\"]*\"", "\"idCardNo\":\"" + REDACTED + "\"")
                 .replaceAll("(?i)\"phone\"\\s*:\\s*\"[^\"]*\"", "\"phone\":\"" + REDACTED + "\"")
+                .replaceAll("(?i)\"questionStemSnapshot\"\\s*:\\s*\"[^\"]*\"", "\"questionStemSnapshot\":\"" + REDACTED + "\"")
                 .replaceAll("(?is)\"acceptedAnswers\"\\s*:\\s*\\[[^\\]]*\\]", "\"acceptedAnswers\":\"" + REDACTED + "\"")
                 .replaceAll("(?is)\"correctOptions\"\\s*:\\s*\\[[^\\]]*\\]", "\"correctOptions\":\"" + REDACTED + "\"")
                 .replaceAll("(?i)\"correctOption\"\\s*:\\s*\"[^\"]*\"", "\"correctOption\":\"" + REDACTED + "\"")

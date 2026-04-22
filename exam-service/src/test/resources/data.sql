@@ -20,7 +20,16 @@ values (1, 'dashboard:view', '查看管理端首页', 'MENU', '/dashboard'),
        (16, 'question-type:read', '查询题型数据', 'API', '/api/admin/question-types'),
        (17, 'question-type:create', '新增题型', 'API', '/api/admin/question-types'),
        (18, 'question-type:update', '编辑题型', 'API', '/api/admin/question-types/{id}'),
-       (19, 'question-type:delete', '删除题型', 'API', '/api/admin/question-types/{id}');
+       (19, 'question-type:delete', '删除题型', 'API', '/api/admin/question-types/{id}'),
+       (20, 'paper-management:view', '查看试卷管理菜单', 'MENU', '/papers'),
+       (21, 'paper:read', '查询试卷数据', 'API', '/api/admin/papers'),
+       (22, 'paper:create', '新增试卷', 'API', '/api/admin/papers'),
+       (23, 'paper:update', '编辑试卷', 'API', '/api/admin/papers/{id}'),
+       (24, 'paper:delete', '删除试卷', 'API', '/api/admin/papers/{id}'),
+       (25, 'paper-question:read', '查询试卷题目明细', 'API', '/api/admin/papers/{id}/questions'),
+       (26, 'paper-question:create', '新增试卷题目明细', 'API', '/api/admin/papers/{id}/questions'),
+       (27, 'paper-question:update', '编辑试卷题目明细', 'API', '/api/admin/papers/{id}/questions/{paperQuestionId}'),
+       (28, 'paper-question:delete', '删除试卷题目明细', 'API', '/api/admin/papers/{id}/questions/{paperQuestionId}');
 
 insert into admin_user (id, username, password_hash, display_name, enabled)
 values (1, 'admin', '$2a$10$PZc9xahNxphTLeeyo6Ezv.trTKZERaKBHGZGzR/EF73f1fTZxB032', '系统管理员', 1),
@@ -49,7 +58,16 @@ values (1, 1, 1),
        (16, 1, 16),
        (17, 1, 17),
        (18, 1, 18),
-       (19, 1, 19);
+       (19, 1, 19),
+       (20, 1, 20),
+       (21, 1, 21),
+       (22, 1, 22),
+       (23, 1, 23),
+       (24, 1, 24),
+       (25, 1, 25),
+       (26, 1, 26),
+       (27, 1, 27),
+       (28, 1, 28);
 
 insert into examinee (id, examinee_no, name, gender, id_card_no, phone, email, status, remark, deleted, created_at, updated_at)
 values (1, 'EX2026001', '张三', 'MALE', '110101199001010011', '13800000001', 'zhangsan@example.com', 'ENABLED', '首批考生', 0, current_timestamp, current_timestamp),
@@ -66,3 +84,11 @@ insert into question (id, stem, question_type_id, difficulty, score, answer_conf
 values (1, 'Java 的入口方法是什么？', 1, 'EASY', 5.00, '{"options":[{"key":"A","content":"main"},{"key":"B","content":"run"},{"key":"C","content":"start"},{"key":"D","content":"boot"}],"correctOption":"A"}', 0, current_timestamp, current_timestamp),
        (2, '请写出 JVM 的英文全称。', 4, 'MEDIUM', 6.00, '{"acceptedAnswers":["Java Virtual Machine","Java虚拟机"]}', 0, current_timestamp, current_timestamp),
        (3, 'Java 是解释型语言。', 3, 'EASY', 2.00, '{"correctAnswer":false}', 0, current_timestamp, current_timestamp);
+
+insert into paper (id, name, description, duration_minutes, total_score, remark, deleted, created_at, updated_at)
+values (1, 'Java 基础试卷', '覆盖 Java 基础知识', 120, 11.00, '首套试卷', 0, current_timestamp, current_timestamp),
+       (2, '空白练习卷', '待手工组卷', 90, 0.00, '草拟中', 0, current_timestamp, current_timestamp);
+
+insert into paper_question (id, paper_id, question_id, question_stem_snapshot, question_type_name_snapshot, difficulty_snapshot, item_score, display_order, deleted, created_at, updated_at)
+values (1, 1, 1, 'Java 的入口方法是什么？', '单选题', 'EASY', 5.00, 1, 0, current_timestamp, current_timestamp),
+       (2, 1, 2, '请写出 JVM 的英文全称。', '简答题', 'MEDIUM', 6.00, 2, 0, current_timestamp, current_timestamp);

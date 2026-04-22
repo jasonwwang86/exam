@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.jack.exam.mapper.PaperMapper">
+
+    <sql id="PaperFilter">
+        p.deleted = 0
+        <if test="keyword != null and keyword != ''">
+            and p.name like concat('%', #{keyword}, '%')
+        </if>
+    </sql>
+
+    <select id="findPage" resultType="cn.jack.exam.dto.paper.PaperListItemResponse">
+        select p.id,
+               p.name,
+               p.total_score,
+               p.duration_minutes,
+               count(pq.id) as question_count,
+               p.updated_at
+        from paper p
+        left join paper_question pq on pq.paper_id = p.id and pq.deleted = 0
+        where <include refid="PaperFilter"/>
+        group by p.id, p.name, p.total_score, p.duration_minutes, p.updated_at
+        order by p.id asc
+        limit #{pageSize} offset #{offset}
+    </select>
+
+    <select id="countPage" resultType="long">
+        select count(1)
+        from paper p
+        where <include refid="PaperFilter"/>
+    </select>
+
+    <select id="findDetailById" resultType="cn.jack.exam.dto.paper.PaperDetailResponse">
+        select p.id,
+               p.name,
+               p.description,
+               p.duration_minutes,
+               p.total_score,
+               count(pq.id) as question_count,
+               p.remark,
+               p.updated_at
+        from paper p
+        left join paper_question pq on pq.paper_id = p.id and pq.deleted = 0
+        where p.id = #{paperId}
+          and p.deleted = 0
+        group by p.id, p.name, p.description, p.duration_minutes, p.total_score, p.remark, p.updated_at
+    </select>
+</mapper>

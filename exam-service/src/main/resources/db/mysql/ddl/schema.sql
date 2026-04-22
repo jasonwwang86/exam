@@ -85,3 +85,33 @@ create table if not exists question (
     key idx_question_question_type_id (question_type_id),
     key idx_question_difficulty (difficulty)
 );
+
+create table if not exists paper (
+    id bigint primary key auto_increment,
+    name varchar(128) not null,
+    description varchar(500),
+    duration_minutes int not null,
+    total_score decimal(8, 2) not null,
+    remark varchar(255),
+    deleted tinyint not null default 0,
+    created_at datetime not null,
+    updated_at datetime not null,
+    unique key uk_paper_name (name)
+);
+
+create table if not exists paper_question (
+    id bigint primary key auto_increment,
+    paper_id bigint not null,
+    question_id bigint not null,
+    question_stem_snapshot varchar(1000) not null,
+    question_type_name_snapshot varchar(64) not null,
+    difficulty_snapshot varchar(16) not null,
+    item_score decimal(8, 2) not null,
+    display_order int not null,
+    deleted tinyint not null default 0,
+    created_at datetime not null,
+    updated_at datetime not null,
+    key idx_paper_question_paper_id (paper_id),
+    key idx_paper_question_question_id (question_id),
+    key idx_paper_question_display_order (paper_id, display_order)
+);

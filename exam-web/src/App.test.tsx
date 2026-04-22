@@ -334,4 +334,67 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: '题库管理' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByText('Java 的入口方法是什么？')).toBeInTheDocument();
   });
+
+  it('renders paper management module entry on the unified main page and can open the route', async () => {
+    window.localStorage.setItem('admin_token', 'token-paper');
+    window.history.pushState({}, '', '/papers');
+    mockGet
+      .mockResolvedValueOnce({
+        data: {
+          userId: 1,
+          username: 'admin',
+          displayName: '系统管理员',
+          roles: ['SUPER_ADMIN'],
+          permissions: [
+            'dashboard:view',
+            'dashboard:read',
+            'paper-management:view',
+            'paper:read',
+            'paper:create',
+            'paper:update',
+            'paper:delete',
+            'paper-question:read',
+            'paper-question:create',
+            'paper-question:update',
+            'paper-question:delete',
+          ],
+          menus: [
+            {
+              code: 'dashboard:view',
+              name: '管理首页',
+              path: '/dashboard',
+            },
+            {
+              code: 'paper-management:view',
+              name: '试卷管理',
+              path: '/papers',
+            },
+          ],
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          total: 1,
+          page: 1,
+          pageSize: 10,
+          records: [
+            {
+              id: 1,
+              name: 'Java 基础试卷',
+              totalScore: 11,
+              durationMinutes: 120,
+              questionCount: 2,
+              updatedAt: '2026-04-22T10:00:00',
+            },
+          ],
+        },
+      });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '试卷管理' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '试卷管理' })).toHaveAttribute('href', '/papers');
+    expect(screen.getByRole('link', { name: '试卷管理' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByText('Java 基础试卷')).toBeInTheDocument();
+  });
 });

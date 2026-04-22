@@ -5,6 +5,7 @@ import type { CurrentUser, LoginFormState } from './modules/auth/types';
 import { LoginPage } from './modules/auth/pages/LoginPage';
 import { DashboardPage } from './modules/dashboard/pages/DashboardPage';
 import { ExamineeManagementPage } from './modules/examinees/pages/ExamineeManagementPage';
+import { PaperManagementPage } from './modules/paper-management/pages/PaperManagementPage';
 import { QuestionBankManagementPage } from './modules/question-bank/pages/QuestionBankManagementPage';
 import { NoPermissionPage } from './modules/system/pages/NoPermissionPage';
 import { LoadingPage } from './modules/system/pages/LoadingPage';
@@ -111,6 +112,7 @@ function AdminAuthApp() {
   const canViewDashboard = currentUser.permissions.includes('dashboard:view');
   const canViewExaminees = currentUser.permissions.includes('examinee:view');
   const canViewQuestionBank = currentUser.permissions.includes('question-bank:view');
+  const canViewPapers = currentUser.permissions.includes('paper-management:view');
   const defaultAuthorizedPath = getDefaultAuthorizedPath(currentUser);
 
   return (
@@ -126,6 +128,10 @@ function AdminAuthApp() {
         <Route
           path="/question-bank"
           element={canViewQuestionBank ? <QuestionBankManagementPage token={accessToken} permissions={currentUser.permissions} /> : <NoPermissionPage />}
+        />
+        <Route
+          path="/papers"
+          element={canViewPapers ? <PaperManagementPage token={accessToken} permissions={currentUser.permissions} /> : <NoPermissionPage />}
         />
         <Route path="/no-permission" element={<NoPermissionPage />} />
         <Route path="*" element={<Navigate to={defaultAuthorizedPath} replace />} />
@@ -147,6 +153,9 @@ function getDefaultAuthorizedPath(user: CurrentUser | null) {
   if (user.permissions.includes('question-bank:view')) {
     return '/question-bank';
   }
+  if (user.permissions.includes('paper-management:view')) {
+    return '/papers';
+  }
   return '/no-permission';
 }
 
@@ -159,6 +168,9 @@ function resolvePostAuthPath(user: CurrentUser, requestedPath: string) {
   }
   if (requestedPath === '/question-bank' && user.permissions.includes('question-bank:view')) {
     return '/question-bank';
+  }
+  if (requestedPath === '/papers' && user.permissions.includes('paper-management:view')) {
+    return '/papers';
   }
   return getDefaultAuthorizedPath(user);
 }

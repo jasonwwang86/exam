@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.jack.exam.mapper.PaperQuestionMapper">
+
+    <select id="findByPaperId" resultType="cn.jack.exam.dto.paper.PaperQuestionResponse">
+        select id,
+               question_id,
+               question_stem_snapshot,
+               question_type_name_snapshot,
+               difficulty_snapshot,
+               item_score,
+               display_order,
+               updated_at
+        from paper_question
+        where paper_id = #{paperId}
+          and deleted = 0
+        order by display_order asc, id asc
+    </select>
+
+    <select id="countActiveByPaperId" resultType="long">
+        select count(1)
+        from paper_question
+        where paper_id = #{paperId}
+          and deleted = 0
+    </select>
+
+    <select id="sumScoreByPaperId" resultType="java.math.BigDecimal">
+        select coalesce(sum(item_score), 0)
+        from paper_question
+        where paper_id = #{paperId}
+          and deleted = 0
+    </select>
+
+    <select id="findMaxDisplayOrder" resultType="int">
+        select coalesce(max(display_order), 0)
+        from paper_question
+        where paper_id = #{paperId}
+          and deleted = 0
+    </select>
+</mapper>

@@ -1,0 +1,31 @@
+insert into question_type (id, name, answer_mode, sort_order, remark, deleted, created_at, updated_at)
+values (1, '单选题', 'SINGLE_CHOICE', 10, '唯一正确答案', 0, now(), now()),
+       (2, '多选题', 'MULTIPLE_CHOICE', 20, '多个正确答案', 0, now(), now()),
+       (3, '判断题', 'TRUE_FALSE', 30, '布尔型答案', 0, now(), now()),
+       (4, '简答题', 'TEXT', 40, '文本参考答案', 0, now(), now());
+
+insert into question (stem, question_type_id, difficulty, score, answer_config, deleted, created_at, updated_at)
+values ('Spring Boot 默认内嵌的 Servlet 容器通常是哪个？', 1, 'EASY', 3.00, '{"options":[{"key":"A","content":"Jetty"},{"key":"B","content":"Tomcat"},{"key":"C","content":"Undertow"},{"key":"D","content":"Netty"}],"correctOption":"B"}', 0, now(), now()),
+       ('HTTP 404 状态码表示什么？', 1, 'EASY', 3.00, '{"options":[{"key":"A","content":"服务器内部错误"},{"key":"B","content":"请求成功"},{"key":"C","content":"资源不存在"},{"key":"D","content":"未授权"}],"correctOption":"C"}', 0, now(), now()),
+       ('MySQL 中用于去重查询结果的关键字是哪个？', 1, 'EASY', 4.00, '{"options":[{"key":"A","content":"ORDER BY"},{"key":"B","content":"GROUP BY"},{"key":"C","content":"DISTINCT"},{"key":"D","content":"LIMIT"}],"correctOption":"C"}', 0, now(), now()),
+       ('在 Linux 中查看当前工作目录的命令是哪个？', 1, 'EASY', 2.00, '{"options":[{"key":"A","content":"pwd"},{"key":"B","content":"ls"},{"key":"C","content":"cd"},{"key":"D","content":"ps"}],"correctOption":"A"}', 0, now(), now()),
+       ('Java 中用于定义常量的关键字是哪个？', 1, 'EASY', 3.00, '{"options":[{"key":"A","content":"static"},{"key":"B","content":"const"},{"key":"C","content":"final"},{"key":"D","content":"volatile"}],"correctOption":"C"}', 0, now(), now()),
+       ('事务四大特性中，A 表示什么？', 1, 'MEDIUM', 5.00, '{"options":[{"key":"A","content":"Atomicity"},{"key":"B","content":"Availability"},{"key":"C","content":"Affinity"},{"key":"D","content":"Adaptability"}],"correctOption":"A"}', 0, now(), now()),
+       ('以下哪些属于 Java 集合框架中的 List 实现？', 2, 'EASY', 4.00, '{"options":[{"key":"A","content":"ArrayList"},{"key":"B","content":"LinkedList"},{"key":"C","content":"HashSet"},{"key":"D","content":"Vector"}],"correctOptions":["A","B","D"]}', 0, now(), now()),
+       ('以下哪些 HTTP 方法通常用于幂等更新或查询？', 2, 'MEDIUM', 5.00, '{"options":[{"key":"A","content":"GET"},{"key":"B","content":"PUT"},{"key":"C","content":"POST"},{"key":"D","content":"DELETE"}],"correctOptions":["A","B","D"]}', 0, now(), now()),
+       ('Spring 中常见的依赖注入方式有哪些？', 2, 'MEDIUM', 5.00, '{"options":[{"key":"A","content":"构造器注入"},{"key":"B","content":"Setter 注入"},{"key":"C","content":"字段注入"},{"key":"D","content":"SQL 注入"}],"correctOptions":["A","B","C"]}', 0, now(), now()),
+       ('设计数据库索引时，以下哪些说法通常正确？', 2, 'HARD', 6.00, '{"options":[{"key":"A","content":"索引可以提升查询性能"},{"key":"B","content":"索引一定能提升所有写入性能"},{"key":"C","content":"过多索引会增加维护成本"},{"key":"D","content":"应优先为高频过滤列建立索引"}],"correctOptions":["A","C","D"]}', 0, now(), now()),
+       ('以下哪些属于常见的关系型数据库？', 2, 'EASY', 4.00, '{"options":[{"key":"A","content":"MySQL"},{"key":"B","content":"PostgreSQL"},{"key":"C","content":"Redis"},{"key":"D","content":"Oracle"}],"correctOptions":["A","B","D"]}', 0, now(), now()),
+       ('在题库管理系统中，以下哪些字段适合作为题目基础属性？', 2, 'MEDIUM', 5.00, '{"options":[{"key":"A","content":"题干"},{"key":"B","content":"题型"},{"key":"C","content":"分值"},{"key":"D","content":"登录密码"}],"correctOptions":["A","B","C"]}', 0, now(), now()),
+       ('Java 中的 String 是不可变对象。', 3, 'EASY', 2.00, '{"correctAnswer":true}', 0, now(), now()),
+       ('HTTP 协议默认是有状态协议。', 3, 'EASY', 2.00, '{"correctAnswer":false}', 0, now(), now()),
+       ('MySQL 的主键列允许重复值。', 3, 'EASY', 2.00, '{"correctAnswer":false}', 0, now(), now()),
+       ('Spring Boot 可以通过注解快速创建 REST 接口。', 3, 'EASY', 3.00, '{"correctAnswer":true}', 0, now(), now()),
+       ('数据库事务提交后，其结果对其他事务立即可见与隔离级别无关。', 3, 'MEDIUM', 4.00, '{"correctAnswer":false}', 0, now(), now()),
+       ('在没有索引的情况下，条件查询通常更容易触发全表扫描。', 3, 'MEDIUM', 3.00, '{"correctAnswer":true}', 0, now(), now()),
+       ('请简述什么是 REST 风格接口。', 4, 'MEDIUM', 8.00, '{"acceptedAnswers":["以资源为中心设计接口，使用 HTTP 方法表达操作","面向资源并使用 HTTP 动词进行操作的接口风格"]}', 0, now(), now()),
+       ('请说明数据库索引的主要作用。', 4, 'MEDIUM', 8.00, '{"acceptedAnswers":["提升查询效率","加快数据检索速度","通过索引减少查询扫描范围"]}', 0, now(), now()),
+       ('请简述什么是事务的原子性。', 4, 'MEDIUM', 7.00, '{"acceptedAnswers":["事务中的操作要么全部成功要么全部失败","事务不可分割，要么全部执行要么全部回滚"]}', 0, now(), now()),
+       ('请说明为什么后端接口不应直接暴露持久化实体。', 4, 'HARD', 10.00, '{"acceptedAnswers":["为了隔离数据库模型与接口契约","避免持久化字段直接暴露给前端","便于演进接口并控制返回字段"]}', 0, now(), now()),
+       ('请简述什么是幂等性，并举一个常见 HTTP 方法示例。', 4, 'HARD', 10.00, '{"acceptedAnswers":["多次执行结果一致，例如 GET 或 PUT","重复调用对系统影响一致，如 GET、PUT、DELETE"]}', 0, now(), now()),
+       ('请说明在试卷组卷时，题型、难度和分值为什么需要独立配置。', 4, 'HARD', 10.00, '{"acceptedAnswers":["便于按规则组合题目","支持按题型难度分值筛题组卷","方便控制试卷结构和总分"]}', 0, now(), now());

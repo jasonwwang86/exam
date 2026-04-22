@@ -136,6 +136,28 @@ class AdminTraceLoggingTest {
         assertThat(output.getOut()).doesNotContain("内部标准答案");
     }
 
+    @Test
+    void shouldLogPaperQuestionOperationsWithoutLeakingQuestionStemSnapshot(CapturedOutput output) throws Exception {
+        String traceNo = "523e4567e89b12d3a456426614174000";
+        String token = loginAndExtractToken("admin", "Admin@123456");
+
+        mockMvc.perform(post("/api/admin/papers/2/questions")
+                        .header("TraceNo", traceNo)
+                        .header("Authorization", "Bearer " + token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "questionIds": [2]
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(header().string("TraceNo", traceNo));
+
+        assertThat(output.getOut()).contains(traceNo);
+        assertThat(output.getOut()).contains("paper_question_created");
+        assertThat(output.getOut()).doesNotContain("请写出 JVM 的英文全称。");
+    }
+
     private String loginAndExtractToken(String username, String password) throws Exception {
         MvcResult result = mockMvc.perform(post("/api/admin/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
