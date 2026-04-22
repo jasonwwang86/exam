@@ -167,7 +167,7 @@
 - exam-service: 认证接口、用户角色权限模型、鉴权逻辑
 
 请按以下方式推进：
-- 先判断是否需要 OpenSpec explore
+- 使用 brainstorming 做一次边界核对，先判断是否需要 OpenSpec explore
 - 如果边界已经清楚，直接创建管理端基础权限与登录模块的 OpenSpec proposal
 - 不要扩展到考生管理或题库管理
 - proposal、design、tasks 中请明确标注本模块的包含范围与不包含范围
@@ -208,7 +208,7 @@
 - exam-service: 考生管理 REST API、DTO、Mapper、数据库设计
 
 请按以下方式推进：
-- 先判断是否需要 OpenSpec explore
+- 使用 brainstorming 做一次边界核对，先判断是否需要 OpenSpec explore
 - 如果边界已经清楚，直接创建考生管理模块的 OpenSpec proposal
 - 不要扩展到考试计划或考生端登录
 - proposal、design、tasks 中请明确标注本模块的包含范围与不包含范围
@@ -249,7 +249,7 @@
 - exam-service: 题库管理 REST API、DTO、Mapper、数据库设计
 
 请按以下方式推进：
-- 先判断是否需要 OpenSpec explore
+- 使用 brainstorming 做一次边界核对，先判断是否需要 OpenSpec explore
 - 如果边界已经清楚，直接创建题库管理模块的 OpenSpec proposal
 - 不要扩展到试卷管理或考试计划
 - proposal、design、tasks 中请明确标注本模块的包含范围与不包含范围
@@ -288,7 +288,7 @@
 - exam-service: 试卷管理 REST API、DTO、Mapper、数据库设计
 
 请按以下方式推进：
-- 先判断是否需要 OpenSpec explore
+- 使用 brainstorming 做一次边界核对，先判断是否需要 OpenSpec explore
 - 如果边界已经清楚，直接创建试卷管理模块的 OpenSpec proposal
 - 不要扩展到考试计划或在线答题
 - proposal、design、tasks 中请明确标注本模块的包含范围与不包含范围
@@ -328,7 +328,7 @@
 - exam-service: 考试计划 REST API、DTO、Mapper、数据库设计
 
 请按以下方式推进：
-- 先判断是否需要 OpenSpec explore
+- 使用 brainstorming 做一次边界核对，先判断是否需要 OpenSpec explore
 - 如果边界已经清楚，直接创建考试计划模块的 OpenSpec proposal
 - 不要扩展到考生端流程或大屏模块
 - proposal、design、tasks 中请明确标注本模块的包含范围与不包含范围
@@ -368,7 +368,7 @@
 - exam-service: 考生登录接口、身份信息接口、可参加考试查询接口
 
 请按以下方式推进：
-- 先判断是否需要 OpenSpec explore
+- 使用 brainstorming 做一次边界核对，先判断是否需要 OpenSpec explore
 - 如果边界已经清楚，直接创建考生端登录与确认信息模块的 OpenSpec proposal
 - 不要扩展到在线答题或成绩单
 - proposal、design、tasks 中请明确标注本模块的包含范围与不包含范围
@@ -409,7 +409,7 @@
 - exam-service: 题目获取、答题保存、考试过程状态接口
 
 请按以下方式推进：
-- 先判断是否需要 OpenSpec explore
+- 使用 brainstorming 做一次边界核对，先判断是否需要 OpenSpec explore
 - 如果边界已经清楚，直接创建在线答题模块的 OpenSpec proposal
 - 不要扩展到提交试卷或成绩单
 - proposal、design、tasks 中请明确标注本模块的包含范围与不包含范围
@@ -448,7 +448,7 @@
 - exam-service: 提交接口、自动提交逻辑、提交状态持久化
 
 请按以下方式推进：
-- 先判断是否需要 OpenSpec explore
+- 使用 brainstorming 做一次边界核对，先判断是否需要 OpenSpec explore
 - 如果边界已经清楚，直接创建提交试卷模块的 OpenSpec proposal
 - 不要扩展到成绩单或监考大屏
 - proposal、design、tasks 中请明确标注本模块的包含范围与不包含范围
@@ -487,7 +487,7 @@
 - exam-service: 成绩查询接口、成绩结果模型与汇总逻辑
 
 请按以下方式推进：
-- 先判断是否需要 OpenSpec explore
+- 使用 brainstorming 做一次边界核对，先判断是否需要 OpenSpec explore
 - 如果边界已经清楚，直接创建成绩单模块的 OpenSpec proposal
 - 不要扩展到动态大屏或考试计划
 - proposal、design、tasks 中请明确标注本模块的包含范围与不包含范围
@@ -527,7 +527,7 @@
 - exam-service: 监考统计接口、考试状态聚合与异常数据汇总
 
 请按以下方式推进：
-- 先判断是否需要 OpenSpec explore
+- 使用 brainstorming 做一次边界核对，先判断是否需要 OpenSpec explore
 - 如果边界已经清楚，直接创建监考大屏模块的 OpenSpec proposal
 - 不要扩展到动态大屏或成绩模块
 - proposal、design、tasks 中请明确标注本模块的包含范围与不包含范围
@@ -567,7 +567,7 @@
 - exam-service: 运营统计接口、聚合分析逻辑与数据汇总
 
 请按以下方式推进：
-- 先判断是否需要 OpenSpec explore
+- 使用 brainstorming 做一次边界核对，先判断是否需要 OpenSpec explore
 - 如果边界已经清楚，直接创建动态大屏模块的 OpenSpec proposal
 - 不要扩展到监考大屏或考试执行模块
 - proposal、design、tasks 中请明确标注本模块的包含范围与不包含范围
