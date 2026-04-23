@@ -17,6 +17,7 @@ import {
 import type { PaperDetailRecord, PaperListRecord, PaperPayload, PaperQuestionRecord } from '../types';
 import type { QuestionListRecord } from '../../question-bank/types';
 import { AdminPage, AdminPageHeader, AdminPageSection } from '../../../shared/components/admin-page/AdminPage';
+import { extractErrorMessage } from '../../../shared/utils/http';
 
 type PaperManagementPageProps = {
   token: string;
@@ -187,8 +188,8 @@ export function PaperManagementPage({ token, permissions }: PaperManagementPageP
       }
       closeFormDialog();
       await loadPapers(keyword);
-    } catch {
-      setFormErrorMessage('保存试卷失败，请稍后重试');
+    } catch (error) {
+      setFormErrorMessage(extractErrorMessage(error, '保存试卷失败，请稍后重试'));
       setSaving(false);
     }
   }

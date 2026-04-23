@@ -4,6 +4,7 @@ import { fetchCurrentUser, login as loginRequest, logout as logoutRequest } from
 import type { CurrentUser, LoginFormState } from './modules/auth/types';
 import { LoginPage } from './modules/auth/pages/LoginPage';
 import { DashboardPage } from './modules/dashboard/pages/DashboardPage';
+import { ExamPlanManagementPage } from './modules/exam-plan-management/pages/ExamPlanManagementPage';
 import { ExamineeManagementPage } from './modules/examinees/pages/ExamineeManagementPage';
 import { PaperManagementPage } from './modules/paper-management/pages/PaperManagementPage';
 import { QuestionBankManagementPage } from './modules/question-bank/pages/QuestionBankManagementPage';
@@ -113,6 +114,7 @@ function AdminAuthApp() {
   const canViewExaminees = currentUser.permissions.includes('examinee:view');
   const canViewQuestionBank = currentUser.permissions.includes('question-bank:view');
   const canViewPapers = currentUser.permissions.includes('paper-management:view');
+  const canViewExamPlans = currentUser.permissions.includes('exam-plan-management:view');
   const defaultAuthorizedPath = getDefaultAuthorizedPath(currentUser);
 
   return (
@@ -132,6 +134,10 @@ function AdminAuthApp() {
         <Route
           path="/papers"
           element={canViewPapers ? <PaperManagementPage token={accessToken} permissions={currentUser.permissions} /> : <NoPermissionPage />}
+        />
+        <Route
+          path="/exam-plans"
+          element={canViewExamPlans ? <ExamPlanManagementPage token={accessToken} permissions={currentUser.permissions} /> : <NoPermissionPage />}
         />
         <Route path="/no-permission" element={<NoPermissionPage />} />
         <Route path="*" element={<Navigate to={defaultAuthorizedPath} replace />} />
@@ -156,6 +162,9 @@ function getDefaultAuthorizedPath(user: CurrentUser | null) {
   if (user.permissions.includes('paper-management:view')) {
     return '/papers';
   }
+  if (user.permissions.includes('exam-plan-management:view')) {
+    return '/exam-plans';
+  }
   return '/no-permission';
 }
 
@@ -171,6 +180,9 @@ function resolvePostAuthPath(user: CurrentUser, requestedPath: string) {
   }
   if (requestedPath === '/papers' && user.permissions.includes('paper-management:view')) {
     return '/papers';
+  }
+  if (requestedPath === '/exam-plans' && user.permissions.includes('exam-plan-management:view')) {
+    return '/exam-plans';
   }
   return getDefaultAuthorizedPath(user);
 }

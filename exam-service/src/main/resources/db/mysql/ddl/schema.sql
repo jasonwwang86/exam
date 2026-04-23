@@ -115,3 +115,28 @@ create table if not exists paper_question (
     key idx_paper_question_question_id (question_id),
     key idx_paper_question_display_order (paper_id, display_order)
 );
+
+create table if not exists exam_plan (
+    id bigint primary key auto_increment,
+    name varchar(128) not null,
+    paper_id bigint not null,
+    start_time datetime not null,
+    end_time datetime not null,
+    status varchar(16) not null,
+    remark varchar(255),
+    deleted tinyint not null default 0,
+    created_at datetime not null,
+    updated_at datetime not null,
+    key idx_exam_plan_paper_id (paper_id),
+    key idx_exam_plan_status (status),
+    key idx_exam_plan_start_time (start_time)
+);
+
+create table if not exists exam_plan_examinee (
+    id bigint primary key auto_increment,
+    exam_plan_id bigint not null,
+    examinee_id bigint not null,
+    created_at datetime not null,
+    unique key uk_exam_plan_examinee (exam_plan_id, examinee_id),
+    key idx_exam_plan_examinee_examinee_id (examinee_id)
+);

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.jack.exam.mapper.ExamPlanExamineeMapper">
+
+    <select id="findByPlanId" resultType="cn.jack.exam.dto.examplan.ExamPlanExamineeResponse">
+        select e.id,
+               e.examinee_no,
+               e.name,
+               e.status
+        from exam_plan_examinee epe
+        inner join examinee e on e.id = epe.examinee_id
+        where epe.exam_plan_id = #{planId}
+          and e.deleted = 0
+        order by e.id asc
+    </select>
+</mapper>

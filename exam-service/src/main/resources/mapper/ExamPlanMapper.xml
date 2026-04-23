@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.jack.exam.mapper.ExamPlanMapper">
+
+    <sql id="ExamPlanFilter">
+        ep.deleted = 0
+        <if test="keyword != null and keyword != ''">
+            and ep.name like concat('%', #{keyword}, '%')
+        </if>
+        <if test="status != null and status != ''">
+            and ep.status = #{status}
+        </if>
+    </sql>
+
+    <select id="findPage" resultType="cn.jack.exam.dto.examplan.ExamPlanListItemResponse">
+        select ep.id,
+               ep.name,
+               ep.paper_id,
+               p.name as paper_name,
+               ep.start_time,
+               ep.end_time,
+               (
+                   select count(1)
+                   from exam_plan_examinee epe
+                   inner join examinee e on e.id = epe.examinee_id
+                   where epe.exam_plan_id = ep.id
+                     and e.deleted = 0
+                     and e.status = 'ENABLED'
+               ) as effective_examinee_count,
+               ep.status,
+               ep.updated_at
+        from exam_plan ep
+        inner join paper p on p.id = ep.paper_id and p.deleted = 0
+        where <include refid="ExamPlanFilter"/>
+        order by ep.id asc
+        limit #{pageSize} offset #{offset}
+    </select>
+
+    <select id="countPage" resultType="long">
+        select count(1)
+        from exam_plan ep
+        where <include refid="ExamPlanFilter"/>
+    </select>
+
+    <select id="findDetailById" resultType="cn.jack.exam.dto.examplan.ExamPlanDetailResponse">
+        select ep.id,
+               ep.name,
+               ep.paper_id,
+               p.name as paper_name,
+               p.duration_minutes as paper_duration_minutes,
+               ep.start_time,
+               ep.end_time,
+               ep.status,
+               ep.remark,
+               (
+                   select count(1)
+                   from exam_plan_examinee epe
+                   inner join examinee e on e.id = epe.examinee_id
+                   where epe.exam_plan_id = ep.id
+                     and e.deleted = 0
+                     and e.status = 'ENABLED'
+               ) as effective_examinee_count,
+               (
+                   select count(1)
+                   from exam_plan_examinee epe
+                   left join examinee e on e.id = epe.examinee_id
+                   where epe.exam_plan_id = ep.id
+                     and (e.id is null or e.deleted &lt;&gt; 0 or e.status &lt;&gt; 'ENABLED')
+               ) as invalid_examinee_count,
+               ep.updated_at
+        from exam_plan ep
+        inner join paper p on p.id = ep.paper_id and p.deleted = 0
+        where ep.id = #{planId}
+          and ep.deleted = 0
+    </select>
+
+    <select id="countValidExaminees" resultType="long">
+        select count(1)
+        from exam_plan_examinee epe
+        inner join examinee e on e.id = epe.examinee_id
+        where epe.exam_plan_id = #{planId}
+          and e.deleted = 0
+          and e.status = 'ENABLED'
+    </select>
+</mapper>

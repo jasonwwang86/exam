@@ -24,6 +24,7 @@ import type {
   QuestionTypeRecord,
 } from '../types';
 import { AdminPage, AdminPageHeader, AdminPageSection } from '../../../shared/components/admin-page/AdminPage';
+import { extractErrorMessage } from '../../../shared/utils/http';
 import styles from './QuestionBankManagementPage.module.css';
 
 type QuestionBankManagementPageProps = {
@@ -229,8 +230,8 @@ export function QuestionBankManagementPage({ token, permissions }: QuestionBankM
       }
       closeQuestionModal();
       await loadQuestions({ keyword, questionTypeId, difficulty });
-    } catch {
-      setFormErrorMessage('保存题目失败，请稍后重试');
+    } catch (error) {
+      setFormErrorMessage(extractErrorMessage(error, '保存题目失败，请稍后重试'));
       setSaving(false);
     }
   }
@@ -264,8 +265,8 @@ export function QuestionBankManagementPage({ token, permissions }: QuestionBankM
       }
       resetTypeForm();
       await refreshQuestionTypes();
-    } catch {
-      setTypeErrorMessage('保存题型失败，请稍后重试');
+    } catch (error) {
+      setTypeErrorMessage(extractErrorMessage(error, '保存题型失败，请稍后重试'));
       setTypeSaving(false);
     }
   }

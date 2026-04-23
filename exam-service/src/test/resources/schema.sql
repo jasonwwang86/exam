@@ -1,6 +1,8 @@
 drop table if exists admin_role_permission;
 drop table if exists admin_user_role;
 drop table if exists admin_session;
+drop table if exists exam_plan_examinee;
+drop table if exists exam_plan;
 drop table if exists paper_question;
 drop table if exists paper;
 drop table if exists question;
@@ -115,4 +117,25 @@ create table paper_question (
     deleted tinyint not null default 0,
     created_at timestamp not null,
     updated_at timestamp not null
+);
+
+create table exam_plan (
+    id bigint primary key auto_increment,
+    name varchar(128) not null,
+    paper_id bigint not null,
+    start_time timestamp not null,
+    end_time timestamp not null,
+    status varchar(16) not null,
+    remark varchar(255),
+    deleted tinyint not null default 0,
+    created_at timestamp not null,
+    updated_at timestamp not null
+);
+
+create table exam_plan_examinee (
+    id bigint primary key auto_increment,
+    exam_plan_id bigint not null,
+    examinee_id bigint not null,
+    created_at timestamp not null,
+    unique (exam_plan_id, examinee_id)
 );

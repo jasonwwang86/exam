@@ -26,6 +26,7 @@ import {
   updateExamineeStatus,
 } from '../services/examineeApi';
 import { AdminPage, AdminPageHeader, AdminPageSection } from '../../../shared/components/admin-page/AdminPage';
+import { extractErrorMessage } from '../../../shared/utils/http';
 import styles from './ExamineeManagementPage.module.css';
 
 type ExamineeManagementPageProps = {
@@ -170,8 +171,8 @@ export function ExamineeManagementPage({ token, permissions }: ExamineeManagemen
       }
       closeFormModal();
       await loadExaminees({ keyword, status });
-    } catch {
-      setFormErrorMessage('保存考生失败，请稍后重试');
+    } catch (error) {
+      setFormErrorMessage(extractErrorMessage(error, '保存考生失败，请稍后重试'));
       setSaving(false);
     }
   }

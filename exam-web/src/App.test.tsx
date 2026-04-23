@@ -398,4 +398,67 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: '试卷管理' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByText('Java 基础试卷')).toBeInTheDocument();
   });
+
+  it('renders exam plan module entry on the unified main page and can open the route', async () => {
+    window.localStorage.setItem('admin_token', 'token-exam-plan');
+    window.history.pushState({}, '', '/exam-plans');
+    mockGet
+      .mockResolvedValueOnce({
+        data: {
+          userId: 1,
+          username: 'admin',
+          displayName: '系统管理员',
+          roles: ['SUPER_ADMIN'],
+          permissions: [
+            'dashboard:view',
+            'dashboard:read',
+            'exam-plan-management:view',
+            'exam-plan:read',
+            'exam-plan:create',
+            'exam-plan:update',
+            'exam-plan:range',
+            'exam-plan:status',
+          ],
+          menus: [
+            {
+              code: 'dashboard:view',
+              name: '管理首页',
+              path: '/dashboard',
+            },
+            {
+              code: 'exam-plan-management:view',
+              name: '考试计划',
+              path: '/exam-plans',
+            },
+          ],
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          total: 1,
+          page: 1,
+          pageSize: 10,
+          records: [
+            {
+              id: 1,
+              name: 'Java 基础考试-上午场',
+              paperId: 1,
+              paperName: 'Java 基础试卷',
+              startTime: '2026-05-01T09:00:00',
+              endTime: '2026-05-01T12:00:00',
+              effectiveExamineeCount: 2,
+              status: 'PUBLISHED',
+              updatedAt: '2026-04-22T10:00:00',
+            },
+          ],
+        },
+      });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '考试计划' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '考试计划' })).toHaveAttribute('href', '/exam-plans');
+    expect(screen.getByRole('link', { name: '考试计划' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByText('Java 基础考试-上午场')).toBeInTheDocument();
+  });
 });
