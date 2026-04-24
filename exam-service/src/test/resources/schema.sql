@@ -2,6 +2,8 @@ drop table if exists admin_role_permission;
 drop table if exists admin_user_role;
 drop table if exists admin_session;
 drop table if exists exam_plan_examinee;
+drop table if exists exam_answer_record;
+drop table if exists exam_answer_session;
 drop table if exists exam_plan;
 drop table if exists paper_question;
 drop table if exists paper;
@@ -112,6 +114,7 @@ create table paper_question (
     question_stem_snapshot varchar(1000) not null,
     question_type_name_snapshot varchar(64) not null,
     difficulty_snapshot varchar(16) not null,
+    answer_config_snapshot clob not null,
     item_score decimal(8, 2) not null,
     display_order int not null,
     deleted tinyint not null default 0,
@@ -138,4 +141,31 @@ create table exam_plan_examinee (
     examinee_id bigint not null,
     created_at timestamp not null,
     unique (exam_plan_id, examinee_id)
+);
+
+create table exam_answer_session (
+    id bigint primary key auto_increment,
+    exam_plan_id bigint not null,
+    examinee_id bigint not null,
+    paper_id bigint not null,
+    started_at timestamp not null,
+    deadline_at timestamp not null,
+    status varchar(32) not null,
+    last_saved_at timestamp,
+    created_at timestamp not null,
+    updated_at timestamp not null,
+    unique (exam_plan_id, examinee_id)
+);
+
+create table exam_answer_record (
+    id bigint primary key auto_increment,
+    session_id bigint not null,
+    paper_question_id bigint not null,
+    question_id bigint not null,
+    answer_content clob,
+    answer_status varchar(32) not null,
+    last_saved_at timestamp not null,
+    created_at timestamp not null,
+    updated_at timestamp not null,
+    unique (session_id, paper_question_id)
 );

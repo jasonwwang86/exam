@@ -101,9 +101,9 @@ insert into paper (id, name, description, duration_minutes, total_score, remark,
 values (1, 'Java 基础试卷', '覆盖 Java 基础知识', 120, 11.00, '首套试卷', 0, current_timestamp, current_timestamp),
        (2, '空白练习卷', '待手工组卷', 90, 0.00, '草拟中', 0, current_timestamp, current_timestamp);
 
-insert into paper_question (id, paper_id, question_id, question_stem_snapshot, question_type_name_snapshot, difficulty_snapshot, item_score, display_order, deleted, created_at, updated_at)
-values (1, 1, 1, 'Java 的入口方法是什么？', '单选题', 'EASY', 5.00, 1, 0, current_timestamp, current_timestamp),
-       (2, 1, 2, '请写出 JVM 的英文全称。', '简答题', 'MEDIUM', 6.00, 2, 0, current_timestamp, current_timestamp);
+insert into paper_question (id, paper_id, question_id, question_stem_snapshot, question_type_name_snapshot, difficulty_snapshot, answer_config_snapshot, item_score, display_order, deleted, created_at, updated_at)
+values (1, 1, 1, 'Java 的入口方法是什么？', '单选题', 'EASY', '{"options":[{"key":"A","content":"main"},{"key":"B","content":"run"},{"key":"C","content":"start"},{"key":"D","content":"boot"}],"correctOption":"A"}', 5.00, 1, 0, current_timestamp, current_timestamp),
+       (2, 1, 2, '请写出 JVM 的英文全称。', '简答题', 'MEDIUM', '{"acceptedAnswers":["Java Virtual Machine","Java虚拟机"]}', 6.00, 2, 0, current_timestamp, current_timestamp);
 
 insert into exam_plan (id, name, paper_id, start_time, end_time, status, remark, deleted, created_at, updated_at)
 values (1, 'Java 基础考试-上午场', 1, timestamp '2026-05-01 09:00:00', timestamp '2026-05-01 12:00:00', 'PUBLISHED', '首场安排', 0, current_timestamp, current_timestamp),

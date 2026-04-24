@@ -43,7 +43,7 @@ TBD - created by archiving change add-candidate-login-and-profile-confirmation. 
 - **THEN** `exam-web` 必须将考生引导回身份确认页
 
 ### Requirement: `exam-service` 应向已确认考生返回可参加考试列表
-系统 MUST 为已完成身份确认的考生提供可参加考试列表能力。`GET /api/candidate/exams` MUST 只返回已分配给当前考生、考试计划状态为 `PUBLISHED` 且尚未结束的考试计划。返回结果 MUST 使用显式 DTO，至少包含考试计划 ID、考试名称、试卷名称、开始时间、结束时间、考试时长、展示状态和备注摘要。
+系统 MUST 为已完成身份确认的考生提供可参加考试列表能力。`GET /api/candidate/exams` MUST 只返回已分配给当前考生、考试计划状态为 `PUBLISHED` 且尚未结束的考试计划。返回结果 MUST 使用显式 DTO，至少包含考试计划 ID、考试名称、试卷名称、开始时间、结束时间、考试时长、展示状态和备注摘要；同时 MUST 补充当前考试是否允许进入在线答题、当前答题进度摘要或会话状态等列表级字段，供 `exam-web` 在本次范围内展示进入答题入口和过程状态。
 
 #### Scenario: 已确认考生查询可参加考试列表
 - **WHEN** 已确认考生在 `exam-web` 打开可参加考试列表页
@@ -64,7 +64,7 @@ TBD - created by archiving change add-candidate-login-and-profile-confirmation. 
 - **WHEN** 已确认考生在 `exam-web` 的可参加考试列表页点击刷新考试列表
 - **THEN** `exam-web` 必须重新调用 `GET /api/candidate/exams`
 - **THEN** `exam-web` 必须用最新返回结果覆盖当前页面状态和本地考试列表缓存
-- **THEN** 本次能力仍不得扩展到在线答题、提交试卷或成绩单入口
+- **THEN** 本次能力仍不得扩展到提交试卷、成绩单或监考大屏入口
 
 #### Scenario: 已登录考生可主动退出登录
 - **WHEN** 已登录考生在身份确认页或可参加考试列表页点击退出登录
@@ -72,10 +72,15 @@ TBD - created by archiving change add-candidate-login-and-profile-confirmation. 
 - **THEN** `exam-web` 必须将当前用户导航回考生登录页
 - **THEN** `exam-web` 不得保留上一个考生的身份摘要或考试列表缓存
 
-#### Scenario: 本次范围内不得暴露开始答题或成绩查看动作
-- **WHEN** 已确认考生查看可参加考试列表
-- **THEN** `exam-web` 只能展示考试信息与当前只读状态
-- **THEN** `exam-web` 与 `exam-service` 不得在本次能力中提供在线答题、提交试卷或成绩单相关入口与字段
+#### Scenario: 已开始且允许作答的考试展示进入答题入口
+- **WHEN** 已确认考生查看已到开始时间、尚未结束且自身具备进入答题条件的考试记录
+- **THEN** `exam-web` 必须允许从该考试记录进入在线答题页
+- **THEN** `exam-service` 返回的列表项必须包含足以驱动该入口与答题进度展示的状态字段
+
+#### Scenario: 未开始或不可作答的考试不得提供进入答题入口
+- **WHEN** 某场考试尚未到开始时间、考生尚未满足进入条件，或答题会话已经处于超时不可写状态
+- **THEN** `exam-web` 不得将该考试显示为可进入答题的记录
+- **THEN** `exam-web` 只能展示只读状态说明，而不是提交试卷或成绩查看动作
 
 ### Requirement: `exam-service` 应复用带有 TraceNo 关联的脱敏日志能力记录考生端流程
 系统 MUST 在考生端登录、身份确认与考试列表接口中复用现有 `TraceNo`、请求日志、响应日志、异常日志和日志脱敏规则，并额外记录登录成功/失败、身份确认完成和考试列表查询的可检索业务日志。
@@ -89,4 +94,3 @@ TBD - created by archiving change add-candidate-login-and-profile-confirmation. 
 - **WHEN** 考生端请求、响应或异常信息中包含身份证号、Token、Authorization 头或其他敏感字段
 - **THEN** `exam-service` 必须在日志中省略这些原始值或替换为脱敏摘要
 - **THEN** `exam-service` 必须继续遵守统一的日志脱敏规则
-

@@ -19,6 +19,23 @@
         order by display_order asc, id asc
     </select>
 
+    <select id="findCandidateQuestionsByPaperId" resultType="cn.jack.exam.dto.candidate.CandidateAnswerQuestionView">
+        select pq.id as paper_question_id,
+               pq.question_id,
+               pq.display_order as question_no,
+               pq.question_stem_snapshot as stem,
+               pq.question_type_name_snapshot as question_type_name,
+               qt.answer_mode,
+               pq.answer_config_snapshot as answer_config,
+               pq.item_score as score
+        from paper_question pq
+        inner join question q on q.id = pq.question_id and q.deleted = 0
+        inner join question_type qt on qt.id = q.question_type_id and qt.deleted = 0
+        where pq.paper_id = #{paperId}
+          and pq.deleted = 0
+        order by pq.display_order asc, pq.id asc
+    </select>
+
     <select id="countActiveByPaperId" resultType="long">
         select count(1)
         from paper_question

@@ -106,6 +106,7 @@ create table if not exists paper_question (
     question_stem_snapshot varchar(1000) not null,
     question_type_name_snapshot varchar(64) not null,
     difficulty_snapshot varchar(16) not null,
+    answer_config_snapshot json not null,
     item_score decimal(8, 2) not null,
     display_order int not null,
     deleted tinyint not null default 0,
@@ -139,4 +140,35 @@ create table if not exists exam_plan_examinee (
     created_at datetime not null,
     unique key uk_exam_plan_examinee (exam_plan_id, examinee_id),
     key idx_exam_plan_examinee_examinee_id (examinee_id)
+);
+
+create table if not exists exam_answer_session (
+    id bigint primary key auto_increment,
+    exam_plan_id bigint not null,
+    examinee_id bigint not null,
+    paper_id bigint not null,
+    started_at datetime not null,
+    deadline_at datetime not null,
+    status varchar(32) not null,
+    last_saved_at datetime null,
+    created_at datetime not null,
+    updated_at datetime not null,
+    unique key uk_exam_answer_session (exam_plan_id, examinee_id),
+    key idx_exam_answer_session_examinee_id (examinee_id),
+    key idx_exam_answer_session_status (status)
+);
+
+create table if not exists exam_answer_record (
+    id bigint primary key auto_increment,
+    session_id bigint not null,
+    paper_question_id bigint not null,
+    question_id bigint not null,
+    answer_content json null,
+    answer_status varchar(32) not null,
+    last_saved_at datetime not null,
+    created_at datetime not null,
+    updated_at datetime not null,
+    unique key uk_exam_answer_record (session_id, paper_question_id),
+    key idx_exam_answer_record_question_id (question_id),
+    key idx_exam_answer_record_status (answer_status)
 );

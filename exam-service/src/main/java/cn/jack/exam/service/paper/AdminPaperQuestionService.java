@@ -52,6 +52,7 @@ public class AdminPaperQuestionService {
             paperQuestion.setQuestionStemSnapshot(question.getStem());
             paperQuestion.setQuestionTypeNameSnapshot(questionType.getName());
             paperQuestion.setDifficultySnapshot(question.getDifficulty());
+            paperQuestion.setAnswerConfigSnapshot(question.getAnswerConfig());
             paperQuestion.setItemScore(question.getScore());
             paperQuestion.setDisplayOrder(nextDisplayOrder++);
             paperQuestion.setDeleted(0);

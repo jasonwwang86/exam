@@ -16,5 +16,7 @@ class MybatisPlusConstraintTest {
         assertTrue(baseMapperClass.isAssignableFrom(AdminPermissionMapper.class));
         assertTrue(baseMapperClass.isAssignableFrom(PaperMapper.class));
         assertTrue(baseMapperClass.isAssignableFrom(PaperQuestionMapper.class));
+        assertTrue(baseMapperClass.isAssignableFrom(ExamAnswerSessionMapper.class));
+        assertTrue(baseMapperClass.isAssignableFrom(ExamAnswerRecordMapper.class));
     }
 }

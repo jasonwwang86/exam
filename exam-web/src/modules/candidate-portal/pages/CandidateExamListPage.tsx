@@ -7,10 +7,28 @@ type CandidateExamListPageProps = {
   submitting: boolean;
   errorMessage: string;
   onRefresh: () => void;
+  onEnterAnswering: (planId: number) => void;
   onLogout: () => void;
 };
 
-export function CandidateExamListPage({ exams, submitting, errorMessage, onRefresh, onLogout }: CandidateExamListPageProps) {
+function formatRemainingMinutes(remainingSeconds: number | null) {
+  if (remainingSeconds == null) {
+    return '待进入答题后开始计时';
+  }
+  return `剩余 ${Math.max(1, Math.ceil(remainingSeconds / 60))} 分钟`;
+}
+
+function resolveAnsweringStatusText(exam: CandidateExam) {
+  if (exam.answeringStatus === 'IN_PROGRESS') {
+    return formatRemainingMinutes(exam.remainingSeconds);
+  }
+  if (exam.answeringStatus === 'TIME_EXPIRED') {
+    return '答题时间已结束';
+  }
+  return '未进入答题';
+}
+
+export function CandidateExamListPage({ exams, submitting, errorMessage, onRefresh, onEnterAnswering, onLogout }: CandidateExamListPageProps) {
   return (
     <main className={styles.page}>
       <section className={styles.shell}>
@@ -19,7 +37,7 @@ export function CandidateExamListPage({ exams, submitting, errorMessage, onRefre
           <Typography.Title level={1} className={styles.title}>
             可参加考试
           </Typography.Title>
-          <Typography.Paragraph className={styles.description}>当前页面只展示本次范围内的待考信息，不提供在线答题、交卷或成绩查看入口。</Typography.Paragraph>
+          <Typography.Paragraph className={styles.description}>当前页面支持进入在线答题并展示答题进度摘要，仍不扩展到交卷、成绩单或监考能力。</Typography.Paragraph>
           <div className={styles.actions}>
             <Button size="large" onClick={onLogout}>
               退出登录
@@ -45,10 +63,20 @@ export function CandidateExamListPage({ exams, submitting, errorMessage, onRefre
                   <div className={styles.meta}>
                     <span>{exam.paperName}</span>
                     <span>考试时长 {exam.durationMinutes} 分钟</span>
+                    <span>{resolveAnsweringStatusText(exam)}</span>
                     <span>
                       {exam.startTime} 至 {exam.endTime}
                     </span>
                     {exam.remark ? <span>{exam.remark}</span> : null}
+                  </div>
+                  <div className={styles.itemActions}>
+                    {exam.canEnterAnswering ? (
+                      <Button type="primary" onClick={() => onEnterAnswering(exam.planId)}>
+                        进入答题
+                      </Button>
+                    ) : (
+                      <span className={styles.readonlyHint}>当前不可进入答题</span>
+                    )}
                   </div>
                 </article>
               ))}

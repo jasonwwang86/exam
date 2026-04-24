@@ -15,4 +15,7 @@ public class CandidateAvailableExamResponse {
     private LocalDateTime endTime;
     private String displayStatus;
     private String remark;
+    private Boolean canEnterAnswering;
+    private String answeringStatus;
+    private Long remainingSeconds;
 }

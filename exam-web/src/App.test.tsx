@@ -722,4 +722,193 @@ describe('App', () => {
     expect(window.localStorage.getItem('candidate_profile')).toBeNull();
     expect(window.localStorage.getItem('candidate_exams')).toBeNull();
   });
+
+  it('shows enter-answer button only for answerable exams and navigates into answering page', async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem('candidate_token', 'candidate-token-exams');
+    window.localStorage.setItem(
+      'candidate_profile',
+      JSON.stringify({
+        examineeId: 1,
+        examineeNo: 'EX2026001',
+        name: '张三',
+        maskedIdCardNo: '110101********0011',
+        profileConfirmed: true,
+        message: '身份信息已确认，可查看可参加考试',
+      }),
+    );
+    window.localStorage.setItem(
+      'candidate_exams',
+      JSON.stringify([
+        {
+          planId: 1,
+          name: 'Java 在线答题场次',
+          paperName: 'Java 基础试卷',
+          durationMinutes: 120,
+          startTime: '2026-05-01T09:00:00',
+          endTime: '2026-05-01T12:00:00',
+          displayStatus: '进行中',
+          remark: '可作答',
+          canEnterAnswering: true,
+          answeringStatus: 'IN_PROGRESS',
+          remainingSeconds: 2400,
+        },
+        {
+          planId: 2,
+          name: '尚未开始考试',
+          paperName: '等待试卷',
+          durationMinutes: 90,
+          startTime: '2026-05-02T09:00:00',
+          endTime: '2026-05-02T10:30:00',
+          displayStatus: '待开始',
+          remark: '不可作答',
+          canEnterAnswering: false,
+          answeringStatus: 'NOT_STARTED',
+          remainingSeconds: null,
+        },
+      ]),
+    );
+    window.history.pushState({}, '', '/candidate/exams');
+    mockPut.mockResolvedValueOnce({
+      data: {
+        planId: 1,
+        name: 'Java 在线答题场次',
+        paperName: 'Java 基础试卷',
+        durationMinutes: 120,
+        sessionStatus: 'IN_PROGRESS',
+        startedAt: '2026-05-01T09:10:00',
+        deadlineAt: '2099-05-01T10:00:00',
+        remainingSeconds: 2400,
+        answeredCount: 0,
+        totalQuestionCount: 2,
+        questions: [
+          {
+            paperQuestionId: 1,
+            questionId: 1,
+            questionNo: 1,
+            stem: 'Java 的入口方法是什么？',
+            questionTypeName: '单选题',
+            answerMode: 'SINGLE_CHOICE',
+            answerConfig: {
+              options: [
+                { key: 'A', content: 'main' },
+                { key: 'B', content: 'run' },
+              ],
+            },
+            savedAnswer: null,
+            answerStatus: 'UNANSWERED',
+          },
+          {
+            paperQuestionId: 2,
+            questionId: 2,
+            questionNo: 2,
+            stem: '请写出 JVM 的英文全称。',
+            questionTypeName: '简答题',
+            answerMode: 'TEXT',
+            answerConfig: {},
+            savedAnswer: null,
+            answerStatus: 'UNANSWERED',
+          },
+        ],
+      },
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '可参加考试' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '进入答题' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '进入答题', hidden: false })).toBeInTheDocument();
+    expect(screen.queryByText('尚未开始考试')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '进入答题' }));
+
+    expect(await screen.findByRole('heading', { name: 'Java 在线答题场次' })).toBeInTheDocument();
+    expect(screen.getByText('Java 的入口方法是什么？')).toBeInTheDocument();
+    expect(screen.queryAllByRole('button', { name: '进入答题' })).toHaveLength(0);
+  });
+
+  it('restores candidate answer session when opening answer route directly', async () => {
+    window.localStorage.setItem('candidate_token', 'candidate-token-answer');
+    window.localStorage.setItem(
+      'candidate_profile',
+      JSON.stringify({
+        examineeId: 1,
+        examineeNo: 'EX2026001',
+        name: '张三',
+        maskedIdCardNo: '110101********0011',
+        profileConfirmed: true,
+        message: '身份信息已确认，可查看可参加考试',
+      }),
+    );
+    window.localStorage.setItem(
+      'candidate_exams',
+      JSON.stringify([
+        {
+          planId: 1,
+          name: 'Java 在线答题场次',
+          paperName: 'Java 基础试卷',
+          durationMinutes: 120,
+          startTime: '2026-05-01T09:00:00',
+          endTime: '2026-05-01T12:00:00',
+          displayStatus: '进行中',
+          remark: '可作答',
+          canEnterAnswering: true,
+          answeringStatus: 'IN_PROGRESS',
+          remainingSeconds: 2400,
+        },
+      ]),
+    );
+    window.history.pushState({}, '', '/candidate/exams/1/answer');
+    mockPut.mockResolvedValueOnce({
+      data: {
+        planId: 1,
+        name: 'Java 在线答题场次',
+        paperName: 'Java 基础试卷',
+        durationMinutes: 120,
+        sessionStatus: 'IN_PROGRESS',
+        startedAt: '2026-05-01T09:10:00',
+        deadlineAt: '2099-05-01T10:00:00',
+        remainingSeconds: 2100,
+        answeredCount: 1,
+        totalQuestionCount: 2,
+        questions: [
+          {
+            paperQuestionId: 1,
+            questionId: 1,
+            questionNo: 1,
+            stem: 'Java 的入口方法是什么？',
+            questionTypeName: '单选题',
+            answerMode: 'SINGLE_CHOICE',
+            answerConfig: {
+              options: [
+                { key: 'A', content: 'main' },
+                { key: 'B', content: 'run' },
+              ],
+            },
+            savedAnswer: {
+              selectedOption: 'A',
+            },
+            answerStatus: 'ANSWERED',
+          },
+          {
+            paperQuestionId: 2,
+            questionId: 2,
+            questionNo: 2,
+            stem: '请写出 JVM 的英文全称。',
+            questionTypeName: '简答题',
+            answerMode: 'TEXT',
+            answerConfig: {},
+            savedAnswer: null,
+            answerStatus: 'UNANSWERED',
+          },
+        ],
+      },
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: 'Java 在线答题场次' })).toBeInTheDocument();
+    expect(screen.getByText('当前已答 1 / 2 题')).toBeInTheDocument();
+    expect(screen.getByRole('radio', { name: 'main' })).toBeChecked();
+  });
 });

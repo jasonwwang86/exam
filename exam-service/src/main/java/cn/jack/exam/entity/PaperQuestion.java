@@ -31,6 +31,9 @@ public class PaperQuestion {
     @TableField("difficulty_snapshot")
     private String difficultySnapshot;
 
+    @TableField("answer_config_snapshot")
+    private String answerConfigSnapshot;
+
     @TableField("item_score")
     private BigDecimal itemScore;
 

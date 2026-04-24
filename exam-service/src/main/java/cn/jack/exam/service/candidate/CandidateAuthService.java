@@ -11,6 +11,7 @@ import cn.jack.exam.dto.candidate.CandidateProfileSummaryResponse;
 import cn.jack.exam.entity.Examinee;
 import cn.jack.exam.exception.ForbiddenException;
 import cn.jack.exam.exception.UnauthorizedException;
+import cn.jack.exam.mapper.ExamAnswerSessionMapper;
 import cn.jack.exam.mapper.ExamPlanMapper;
 import cn.jack.exam.mapper.ExamineeMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
@@ -28,6 +29,7 @@ public class CandidateAuthService {
 
     private final ExamineeMapper examineeMapper;
     private final ExamPlanMapper examPlanMapper;
+    private final ExamAnswerSessionMapper examAnswerSessionMapper;
     private final CandidateTokenService candidateTokenService;
 
     public CandidateLoginResponse login(CandidateLoginRequest request) {
@@ -105,6 +107,8 @@ public class CandidateAuthService {
         List<CandidateAvailableExamResponse> exams = examPlanMapper.findAvailableForCandidate(
                 context.getExaminee().getId(),
                 LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        exams.forEach(exam -> applyAnsweringSummary(exam, context.getExaminee().getId(), now));
         log.info("traceNo={} event=candidate_exam_listed candidateId={} examCount={}",
                 TraceContext.getTraceNo(),
                 context.getExaminee().getId(),
@@ -138,5 +142,27 @@ public class CandidateAuthService {
             return "********";
         }
         return idCardNo.substring(0, 6) + "********" + idCardNo.substring(idCardNo.length() - 4);
+    }
+
+    private void applyAnsweringSummary(CandidateAvailableExamResponse exam,
+                                       Long examineeId,
+                                       LocalDateTime now) {
+        var session = examAnswerSessionMapper.selectOne(new LambdaQueryWrapper<cn.jack.exam.entity.ExamAnswerSession>()
+                .eq(cn.jack.exam.entity.ExamAnswerSession::getExamPlanId, exam.getPlanId())
+                .eq(cn.jack.exam.entity.ExamAnswerSession::getExamineeId, examineeId)
+                .last("limit 1"));
+
+        if (session == null) {
+            exam.setAnsweringStatus("NOT_STARTED");
+            exam.setRemainingSeconds(null);
+            exam.setCanEnterAnswering(!now.isBefore(exam.getStartTime()) && now.isBefore(exam.getEndTime()));
+            return;
+        }
+
+        long remainingSeconds = Math.max(0, java.time.Duration.between(now, session.getDeadlineAt()).getSeconds());
+        boolean timeExpired = remainingSeconds <= 0 || "TIME_EXPIRED".equals(session.getStatus());
+        exam.setAnsweringStatus(timeExpired ? "TIME_EXPIRED" : session.getStatus());
+        exam.setRemainingSeconds(remainingSeconds);
+        exam.setCanEnterAnswering(!timeExpired && now.isBefore(exam.getEndTime()));
     }
 }

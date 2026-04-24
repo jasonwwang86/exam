@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { fetchCurrentUser, login as loginRequest, logout as logoutRequest } from './modules/auth/services/authApi';
 import type { CurrentUser, LoginFormState } from './modules/auth/types';
 import { LoginPage } from './modules/auth/pages/LoginPage';
@@ -7,13 +7,16 @@ import {
   confirmCandidateProfile,
   fetchCandidateProfile,
   listCandidateExams,
+  loadCandidateAnswerSession,
   loginCandidate,
+  saveCandidateAnswer,
 } from './modules/candidate-portal/services/candidateApi';
+import { CandidateAnsweringPage } from './modules/candidate-portal/pages/CandidateAnsweringPage';
 import { CandidateConfirmationPage } from './modules/candidate-portal/pages/CandidateConfirmationPage';
 import { CandidateExamListPage } from './modules/candidate-portal/pages/CandidateExamListPage';
 import { CandidateLoadingPage } from './modules/candidate-portal/pages/CandidateLoadingPage';
 import { CandidateLoginPage } from './modules/candidate-portal/pages/CandidateLoginPage';
-import type { CandidateExam, CandidateLoginFormState, CandidateProfile } from './modules/candidate-portal/types';
+import type { CandidateAnswerSession, CandidateExam, CandidateLoginFormState, CandidateProfile } from './modules/candidate-portal/types';
 import { DashboardPage } from './modules/dashboard/pages/DashboardPage';
 import { ExamPlanManagementPage } from './modules/exam-plan-management/pages/ExamPlanManagementPage';
 import { ExamineeManagementPage } from './modules/examinees/pages/ExamineeManagementPage';
@@ -219,6 +222,7 @@ function CandidatePortalApp() {
   const [form, setForm] = useState<CandidateLoginFormState>({ examineeNo: '', idCardNo: '' });
   const [profile, setProfile] = useState<CandidateProfile | null>(null);
   const [exams, setExams] = useState<CandidateExam[]>([]);
+  const [answerSession, setAnswerSession] = useState<CandidateAnswerSession | null>(null);
   const [accessToken, setAccessToken] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -242,9 +246,11 @@ function CandidatePortalApp() {
     setAccessToken('');
     setProfile(null);
     setExams([]);
+    setAnswerSession(null);
   }
 
   async function restoreCandidateSession(token: string) {
+    const requestedPath = window.location.pathname;
     try {
       const cachedProfile = readCandidateProfileCache();
       const candidateProfile = cachedProfile ?? (await fetchCandidateProfile(token));
@@ -256,9 +262,10 @@ function CandidatePortalApp() {
         const candidateExams = cachedExams ?? (await listCandidateExams(token));
         setExams(candidateExams);
         writeCandidateExamsCache(candidateExams);
-        navigate('/candidate/exams', { replace: true });
+        navigate(resolveCandidatePath(requestedPath, true), { replace: true });
       } else {
         setExams([]);
+        setAnswerSession(null);
         window.localStorage.removeItem(CANDIDATE_EXAMS_STORAGE_KEY);
         navigate('/candidate/confirm', { replace: true });
       }
@@ -296,6 +303,7 @@ function CandidatePortalApp() {
         message: response.profileConfirmed ? '身份信息已确认，可查看可参加考试' : '请先确认身份信息后查看可参加考试',
       });
       setExams([]);
+      setAnswerSession(null);
       window.localStorage.removeItem(CANDIDATE_EXAMS_STORAGE_KEY);
       navigate(response.profileConfirmed ? '/candidate/exams' : '/candidate/confirm', { replace: true });
     } catch (error) {
@@ -331,6 +339,7 @@ function CandidatePortalApp() {
       });
       const candidateExams = await listCandidateExams(response.token);
       setExams(candidateExams);
+      setAnswerSession(null);
       writeCandidateExamsCache(candidateExams);
       navigate('/candidate/exams', { replace: true });
     } catch (error) {
@@ -366,6 +375,67 @@ function CandidatePortalApp() {
       writeCandidateExamsCache(candidateExams);
     } catch (error) {
       setErrorMessage(extractErrorMessage(error, '刷新考试列表失败，请稍后重试'));
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleEnterAnswering(planId: number) {
+    if (!accessToken || !profile?.profileConfirmed) {
+      navigate('/candidate/login', { replace: true });
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMessage('');
+    try {
+      const session = await loadCandidateAnswerSession(accessToken, planId);
+      setAnswerSession(session);
+      navigate(`/candidate/exams/${planId}/answer`, { replace: false });
+    } catch (error) {
+      setAnswerSession(null);
+      setErrorMessage(extractErrorMessage(error, '进入答题失败，请稍后重试'));
+      navigate('/candidate/exams', { replace: true });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleLoadAnsweringSession(planId: number) {
+    if (!accessToken || !profile?.profileConfirmed) {
+      navigate('/candidate/login', { replace: true });
+      return;
+    }
+    if (answerSession?.planId === planId) {
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMessage('');
+    try {
+      const session = await loadCandidateAnswerSession(accessToken, planId);
+      setAnswerSession(session);
+    } catch (error) {
+      setAnswerSession(null);
+      setErrorMessage(extractErrorMessage(error, '进入答题失败，请稍后重试'));
+      navigate('/candidate/exams', { replace: true });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleSaveAnswer(planId: number, paperQuestionId: number, answerContent: Record<string, unknown> | null) {
+    if (!accessToken) {
+      throw new Error('missing candidate token');
+    }
+
+    setSubmitting(true);
+    setErrorMessage('');
+    try {
+      return await saveCandidateAnswer(accessToken, planId, paperQuestionId, answerContent);
+    } catch (error) {
+      setErrorMessage(extractErrorMessage(error, '保存答案失败，请稍后重试'));
+      throw error;
     } finally {
       setSubmitting(false);
     }
@@ -416,6 +486,29 @@ function CandidatePortalApp() {
               submitting={submitting}
               errorMessage={errorMessage}
               onRefresh={() => void handleRefreshCandidateExams()}
+              onEnterAnswering={(planId) => void handleEnterAnswering(planId)}
+              onLogout={handleCandidateLogout}
+            />
+          ) : (
+            <Navigate to="/candidate/confirm" replace />
+          )
+        }
+      />
+      <Route
+        path="/candidate/exams/:planId/answer"
+        element={
+          profile.profileConfirmed ? (
+            <CandidateAnsweringRoute
+              accessToken={accessToken}
+              answerSession={answerSession}
+              submitting={submitting}
+              errorMessage={errorMessage}
+              onLoadAnswerSession={(planId) => void handleLoadAnsweringSession(planId)}
+              onSaveAnswer={handleSaveAnswer}
+              onBackToExamList={() => {
+                setErrorMessage('');
+                navigate('/candidate/exams', { replace: true });
+              }}
               onLogout={handleCandidateLogout}
             />
           ) : (
@@ -425,6 +518,59 @@ function CandidatePortalApp() {
       />
       <Route path="*" element={<Navigate to={profile.profileConfirmed ? '/candidate/exams' : '/candidate/confirm'} replace />} />
     </Routes>
+  );
+}
+
+type CandidateAnsweringRouteProps = {
+  accessToken: string;
+  answerSession: CandidateAnswerSession | null;
+  submitting: boolean;
+  errorMessage: string;
+  onLoadAnswerSession: (planId: number) => void;
+  onSaveAnswer: (planId: number, paperQuestionId: number, answerContent: Record<string, unknown> | null) => Promise<any>;
+  onBackToExamList: () => void;
+  onLogout: () => void;
+};
+
+function CandidateAnsweringRoute({
+  accessToken,
+  answerSession,
+  submitting,
+  errorMessage,
+  onLoadAnswerSession,
+  onSaveAnswer,
+  onBackToExamList,
+  onLogout,
+}: CandidateAnsweringRouteProps) {
+  const params = useParams<{ planId: string }>();
+  const planId = Number(params.planId);
+
+  useEffect(() => {
+    if (!accessToken || !Number.isFinite(planId) || planId <= 0) {
+      return;
+    }
+    if (answerSession?.planId !== planId) {
+      onLoadAnswerSession(planId);
+    }
+  }, [accessToken, answerSession?.planId, planId]);
+
+  if (!Number.isFinite(planId) || planId <= 0) {
+    return <Navigate to="/candidate/exams" replace />;
+  }
+
+  if (!answerSession || answerSession.planId !== planId) {
+    return <CandidateLoadingPage />;
+  }
+
+  return (
+    <CandidateAnsweringPage
+      session={answerSession}
+      submitting={submitting}
+      errorMessage={errorMessage}
+      onSaveAnswer={(paperQuestionId, answerContent) => onSaveAnswer(planId, paperQuestionId, answerContent)}
+      onBackToExamList={onBackToExamList}
+      onLogout={onLogout}
+    />
   );
 }
 
@@ -462,4 +608,17 @@ function readCandidateExamsCache() {
 
 function writeCandidateExamsCache(exams: CandidateExam[]) {
   window.localStorage.setItem(CANDIDATE_EXAMS_STORAGE_KEY, JSON.stringify(exams));
+}
+
+function resolveCandidatePath(requestedPath: string, profileConfirmed: boolean) {
+  if (!profileConfirmed) {
+    return '/candidate/confirm';
+  }
+  if (/^\/candidate\/exams\/\d+\/answer$/.test(requestedPath)) {
+    return requestedPath;
+  }
+  if (requestedPath === '/candidate/exams') {
+    return requestedPath;
+  }
+  return '/candidate/exams';
 }

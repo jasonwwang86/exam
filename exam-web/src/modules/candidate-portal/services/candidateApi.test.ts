@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockPost, mockGet, mockRandomUuid } = vi.hoisted(() => ({
+const { mockPost, mockGet, mockPut, mockRandomUuid } = vi.hoisted(() => ({
   mockPost: vi.fn(),
   mockGet: vi.fn(),
+  mockPut: vi.fn(),
   mockRandomUuid: vi.fn(),
 }));
 
@@ -11,6 +12,7 @@ vi.mock('axios', () => ({
     create: () => ({
       post: mockPost,
       get: mockGet,
+      put: mockPut,
     }),
   },
 }));
@@ -19,6 +21,7 @@ describe('candidateApi TraceNo headers', () => {
   beforeEach(() => {
     mockPost.mockReset();
     mockGet.mockReset();
+    mockPut.mockReset();
     mockRandomUuid.mockReset();
     mockRandomUuid.mockReturnValue('123e4567-e89b-12d3-a456-426614174000');
     vi.stubGlobal('crypto', {
@@ -132,5 +135,72 @@ describe('candidateApi TraceNo headers', () => {
         TraceNo: '123e4567e89b12d3a456426614174000',
       },
     });
+  });
+
+  it('sends Authorization and TraceNo headers when loading candidate answer session', async () => {
+    mockPut.mockResolvedValue({
+      data: {
+        planId: 1,
+        name: 'Java 在线答题场次',
+        paperName: 'Java 基础试卷',
+        durationMinutes: 120,
+        sessionStatus: 'IN_PROGRESS',
+        startedAt: '2026-05-01T09:10:00',
+        deadlineAt: '2026-05-01T11:00:00',
+        remainingSeconds: 6600,
+        answeredCount: 0,
+        totalQuestionCount: 2,
+        questions: [],
+      },
+    });
+
+    const { loadCandidateAnswerSession } = await import('./candidateApi');
+
+    await loadCandidateAnswerSession('candidate-token-2', 1);
+
+    expect(mockPut).toHaveBeenCalledWith(
+      '/api/candidate/exams/1/answer-session',
+      {},
+      {
+        headers: {
+          Authorization: 'Bearer candidate-token-2',
+          TraceNo: '123e4567e89b12d3a456426614174000',
+        },
+      },
+    );
+  });
+
+  it('sends Authorization and TraceNo headers when saving candidate answer', async () => {
+    mockPut.mockResolvedValue({
+      data: {
+        paperQuestionId: 1,
+        answerStatus: 'ANSWERED',
+        lastSavedAt: '2026-05-01T09:15:00',
+        remainingSeconds: 6300,
+        sessionStatus: 'IN_PROGRESS',
+        answeredCount: 1,
+      },
+    });
+
+    const { saveCandidateAnswer } = await import('./candidateApi');
+
+    await saveCandidateAnswer('candidate-token-2', 1, 1, {
+      selectedOption: 'A',
+    });
+
+    expect(mockPut).toHaveBeenCalledWith(
+      '/api/candidate/exams/1/questions/1/answer',
+      {
+        answerContent: {
+          selectedOption: 'A',
+        },
+      },
+      {
+        headers: {
+          Authorization: 'Bearer candidate-token-2',
+          TraceNo: '123e4567e89b12d3a456426614174000',
+        },
+      },
+    );
   });
 });

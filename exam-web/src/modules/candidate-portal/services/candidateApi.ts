@@ -1,6 +1,12 @@
 import axios from 'axios';
 import { withTraceNo } from '../../../shared/utils/trace';
-import type { CandidateExam, CandidateProfile, CandidateProfileSummary } from '../types';
+import type {
+  CandidateAnswerSession,
+  CandidateExam,
+  CandidateProfile,
+  CandidateProfileSummary,
+  CandidateSaveAnswerResult,
+} from '../types';
 
 const client = axios.create();
 
@@ -48,6 +54,35 @@ export async function confirmCandidateProfile(token: string) {
 export async function listCandidateExams(token: string) {
   const response = await client.get<CandidateExam[]>(
     '/api/candidate/exams',
+    withTraceNo({
+      Authorization: `Bearer ${token}`,
+    }),
+  );
+  return response.data;
+}
+
+export async function loadCandidateAnswerSession(token: string, planId: number) {
+  const response = await client.put<CandidateAnswerSession>(
+    `/api/candidate/exams/${planId}/answer-session`,
+    {},
+    withTraceNo({
+      Authorization: `Bearer ${token}`,
+    }),
+  );
+  return response.data;
+}
+
+export async function saveCandidateAnswer(
+  token: string,
+  planId: number,
+  paperQuestionId: number,
+  answerContent: Record<string, unknown> | null,
+) {
+  const response = await client.put<CandidateSaveAnswerResult>(
+    `/api/candidate/exams/${planId}/questions/${paperQuestionId}/answer`,
+    {
+      answerContent,
+    },
     withTraceNo({
       Authorization: `Bearer ${token}`,
     }),

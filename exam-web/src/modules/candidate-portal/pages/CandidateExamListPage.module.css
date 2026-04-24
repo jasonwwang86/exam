@@ -104,3 +104,14 @@
   gap: 6px;
   color: #5c6d64;
 }
+
+.itemActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.readonlyHint {
+  color: #8b9a92;
+  font-size: 14px;
+  font-weight: 600;
+}

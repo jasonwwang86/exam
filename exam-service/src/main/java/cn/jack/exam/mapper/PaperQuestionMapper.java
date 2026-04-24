@@ -1,5 +1,6 @@
 package cn.jack.exam.mapper;
 
+import cn.jack.exam.dto.candidate.CandidateAnswerQuestionView;
 import cn.jack.exam.dto.paper.PaperQuestionResponse;
 import cn.jack.exam.entity.PaperQuestion;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
@@ -13,6 +14,8 @@ import java.util.List;
 public interface PaperQuestionMapper extends BaseMapper<PaperQuestion> {
 
     List<PaperQuestionResponse> findByPaperId(@Param("paperId") Long paperId);
+
+    List<CandidateAnswerQuestionView> findCandidateQuestionsByPaperId(@Param("paperId") Long paperId);
 
     long countActiveByPaperId(@Param("paperId") Long paperId);
 

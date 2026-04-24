@@ -1,5 +1,7 @@
 package cn.jack.exam.controller.admin;
 
+import cn.jack.exam.entity.PaperQuestion;
+import cn.jack.exam.mapper.PaperQuestionMapper;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -26,6 +28,9 @@ class AdminPaperControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private PaperQuestionMapper paperQuestionMapper;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -174,6 +179,16 @@ class AdminPaperControllerTest {
                 .andExpect(jsonPath("$[0].questionId").value(1))
                 .andExpect(jsonPath("$[1].questionId").value(3));
 
+        PaperQuestion firstCreated = paperQuestionMapper.selectById(3L);
+        PaperQuestion secondCreated = paperQuestionMapper.selectById(4L);
+
+        org.assertj.core.api.Assertions.assertThat(firstCreated).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(firstCreated.getAnswerConfigSnapshot()).isNotBlank();
+        org.assertj.core.api.Assertions.assertThat(firstCreated.getAnswerConfigSnapshot()).contains("\"correctOption\"");
+        org.assertj.core.api.Assertions.assertThat(secondCreated).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(secondCreated.getAnswerConfigSnapshot()).isNotBlank();
+        org.assertj.core.api.Assertions.assertThat(secondCreated.getAnswerConfigSnapshot()).contains("\"correctAnswer\"");
+
         mockMvc.perform(get("/api/admin/papers/2")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
@@ -200,6 +215,7 @@ class AdminPaperControllerTest {
     @Test
     void shouldUpdatePaperQuestionAndRecalculateTotalScore() throws Exception {
         String token = loginAndExtractToken("admin", "Admin@123456");
+        String originalAnswerConfigSnapshot = paperQuestionMapper.selectById(2L).getAnswerConfigSnapshot();
 
         mockMvc.perform(put("/api/admin/papers/1/questions/2")
                         .header("Authorization", "Bearer " + token)
@@ -214,6 +230,10 @@ class AdminPaperControllerTest {
                 .andExpect(jsonPath("$.id").value(2))
                 .andExpect(jsonPath("$.itemScore").value(10.0))
                 .andExpect(jsonPath("$.displayOrder").value(1));
+
+        PaperQuestion updated = paperQuestionMapper.selectById(2L);
+        org.assertj.core.api.Assertions.assertThat(updated).isNotNull();
+        org.assertj.core.api.Assertions.assertThat(updated.getAnswerConfigSnapshot()).isEqualTo(originalAnswerConfigSnapshot);
 
         mockMvc.perform(get("/api/admin/papers/1")
                         .header("Authorization", "Bearer " + token))
