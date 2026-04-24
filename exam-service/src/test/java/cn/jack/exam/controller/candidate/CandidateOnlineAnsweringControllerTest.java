@@ -189,9 +189,120 @@ class CandidateOnlineAnsweringControllerTest {
     }
 
     @Test
-    void shouldExposeAnsweringSummaryOnCandidateExamList() throws Exception {
+    void shouldSubmitExamManuallyAndKeepSubmissionIdempotent() throws Exception {
         Long planId = insertExamPlanForExaminee(
                 105L,
+                "主动交卷场次",
+                LocalDateTime.now().minusMinutes(30),
+                LocalDateTime.now().plusMinutes(40),
+                1L);
+        String candidateToken = confirmCandidateAndExtractToken("EX2026001", "110101199001010011");
+
+        mockMvc.perform(put("/api/candidate/exams/{planId}/answer-session", planId)
+                        .header("Authorization", "Bearer " + candidateToken))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/candidate/exams/{planId}/questions/{paperQuestionId}/answer", planId, 1L)
+                        .header("Authorization", "Bearer " + candidateToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "answerContent": {
+                                    "selectedOption": "A"
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        MvcResult firstSubmission = mockMvc.perform(post("/api/candidate/exams/{planId}/submission", planId)
+                        .header("Authorization", "Bearer " + candidateToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.planId").value(planId))
+                .andExpect(jsonPath("$.sessionStatus").value("SUBMITTED"))
+                .andExpect(jsonPath("$.submissionMethod").value("MANUAL"))
+                .andExpect(jsonPath("$.submittedAt").isString())
+                .andExpect(jsonPath("$.answeredCount").value(1))
+                .andExpect(jsonPath("$.totalQuestionCount").value(2))
+                .andReturn();
+
+        String firstSubmittedAt = objectMapper.readTree(firstSubmission.getResponse().getContentAsString())
+                .get("submittedAt")
+                .asText();
+
+        mockMvc.perform(post("/api/candidate/exams/{planId}/submission", planId)
+                        .header("Authorization", "Bearer " + candidateToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessionStatus").value("SUBMITTED"))
+                .andExpect(jsonPath("$.submissionMethod").value("MANUAL"))
+                .andExpect(jsonPath("$.submittedAt").value(firstSubmittedAt));
+    }
+
+    @Test
+    void shouldAutoSubmitExpiredSessionWhenReloadingAnswerSession() throws Exception {
+        Long planId = insertExamPlanForExaminee(
+                106L,
+                "到时自动交卷场次",
+                LocalDateTime.now().minusMinutes(30),
+                LocalDateTime.now().plusMinutes(40),
+                1L);
+        String candidateToken = confirmCandidateAndExtractToken("EX2026001", "110101199001010011");
+
+        mockMvc.perform(put("/api/candidate/exams/{planId}/answer-session", planId)
+                        .header("Authorization", "Bearer " + candidateToken))
+                .andExpect(status().isOk());
+
+        jdbcTemplate.update(
+                "update exam_answer_session set deadline_at = ?, status = ? where exam_plan_id = ? and examinee_id = ?",
+                Timestamp.valueOf(LocalDateTime.now().minusSeconds(3)),
+                "IN_PROGRESS",
+                planId,
+                1L);
+
+        mockMvc.perform(put("/api/candidate/exams/{planId}/answer-session", planId)
+                        .header("Authorization", "Bearer " + candidateToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessionStatus").value("AUTO_SUBMITTED"))
+                .andExpect(jsonPath("$.submittedAt").isString());
+    }
+
+    @Test
+    void shouldRejectSavingAnswerAfterSessionSubmitted() throws Exception {
+        Long planId = insertExamPlanForExaminee(
+                107L,
+                "交卷后不可继续保存场次",
+                LocalDateTime.now().minusMinutes(30),
+                LocalDateTime.now().plusMinutes(40),
+                1L);
+        String candidateToken = confirmCandidateAndExtractToken("EX2026001", "110101199001010011");
+
+        mockMvc.perform(put("/api/candidate/exams/{planId}/answer-session", planId)
+                        .header("Authorization", "Bearer " + candidateToken))
+                .andExpect(status().isOk());
+
+        jdbcTemplate.update(
+                "update exam_answer_session set status = ? where exam_plan_id = ? and examinee_id = ?",
+                "SUBMITTED",
+                planId,
+                1L);
+
+        mockMvc.perform(put("/api/candidate/exams/{planId}/questions/{paperQuestionId}/answer", planId, 1L)
+                        .header("Authorization", "Bearer " + candidateToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "answerContent": {
+                                    "selectedOption": "B"
+                                  }
+                                }
+                                """))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("试卷已提交，不能重复作答"));
+    }
+
+    @Test
+    void shouldExposeAnsweringSummaryOnCandidateExamList() throws Exception {
+        Long planId = insertExamPlanForExaminee(
+                108L,
                 "考试列表在线答题摘要场次",
                 LocalDateTime.now().minusMinutes(30),
                 LocalDateTime.now().plusMinutes(40),
@@ -205,9 +316,38 @@ class CandidateOnlineAnsweringControllerTest {
         mockMvc.perform(get("/api/candidate/exams")
                         .header("Authorization", "Bearer " + candidateToken))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[?(@.planId == 105)].canEnterAnswering").value(true))
-                .andExpect(jsonPath("$[?(@.planId == 105)].answeringStatus").value("IN_PROGRESS"))
-                .andExpect(jsonPath("$[?(@.planId == 105)].remainingSeconds").isNotEmpty());
+                .andExpect(jsonPath("$[?(@.planId == 108)].canEnterAnswering").value(true))
+                .andExpect(jsonPath("$[?(@.planId == 108)].answeringStatus").value("IN_PROGRESS"))
+                .andExpect(jsonPath("$[?(@.planId == 108)].remainingSeconds").isNotEmpty());
+    }
+
+    @Test
+    void shouldExposeSubmittedSummaryOnCandidateExamList() throws Exception {
+        Long planId = insertExamPlanForExaminee(
+                109L,
+                "考试列表已交卷摘要场次",
+                LocalDateTime.now().minusMinutes(30),
+                LocalDateTime.now().plusMinutes(40),
+                1L);
+        String candidateToken = confirmCandidateAndExtractToken("EX2026001", "110101199001010011");
+
+        mockMvc.perform(put("/api/candidate/exams/{planId}/answer-session", planId)
+                        .header("Authorization", "Bearer " + candidateToken))
+                .andExpect(status().isOk());
+
+        jdbcTemplate.update(
+                "update exam_answer_session set status = ?, last_saved_at = ? where exam_plan_id = ? and examinee_id = ?",
+                "SUBMITTED",
+                Timestamp.valueOf(LocalDateTime.now().minusMinutes(1)),
+                planId,
+                1L);
+
+        mockMvc.perform(get("/api/candidate/exams")
+                        .header("Authorization", "Bearer " + candidateToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.planId == 109)].canEnterAnswering").value(false))
+                .andExpect(jsonPath("$[?(@.planId == 109)].answeringStatus").value("SUBMITTED"))
+                .andExpect(jsonPath("$[?(@.planId == 109)].submittedAt").isNotEmpty());
     }
 
     private String loginCandidateAndExtractToken(String examineeNo, String idCardNo) throws Exception {

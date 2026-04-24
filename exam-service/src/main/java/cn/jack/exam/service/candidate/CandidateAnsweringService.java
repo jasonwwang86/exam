@@ -5,6 +5,7 @@ import cn.jack.exam.config.TraceContext;
 import cn.jack.exam.dto.candidate.CandidateAnswerQuestionItemResponse;
 import cn.jack.exam.dto.candidate.CandidateAnswerQuestionView;
 import cn.jack.exam.dto.candidate.CandidateAnswerSessionResponse;
+import cn.jack.exam.dto.candidate.CandidateExamSubmissionResponse;
 import cn.jack.exam.dto.candidate.CandidateSaveAnswerRequest;
 import cn.jack.exam.dto.candidate.CandidateSaveAnswerResponse;
 import cn.jack.exam.entity.ExamAnswerRecord;
@@ -27,7 +28,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -39,6 +42,13 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class CandidateAnsweringService {
+
+    private static final String STATUS_IN_PROGRESS = "IN_PROGRESS";
+    private static final String STATUS_TIME_EXPIRED = "TIME_EXPIRED";
+    private static final String STATUS_SUBMITTED = "SUBMITTED";
+    private static final String STATUS_AUTO_SUBMITTED = "AUTO_SUBMITTED";
+    private static final String METHOD_MANUAL = "MANUAL";
+    private static final String METHOD_AUTO = "AUTO";
 
     private final ExamPlanMapper examPlanMapper;
     private final ExamPlanExamineeMapper examPlanExamineeMapper;
@@ -64,8 +74,8 @@ public class CandidateAnsweringService {
         ExamAnswerSession session = findSession(planId, context.getExaminee().getId());
         if (session == null) {
             session = createSession(plan, paper, context.getExaminee().getId(), now);
-        } else if (isExpired(session, now)) {
-            session = markTimeExpired(session, now);
+        } else {
+            session = normalizeSessionForRead(session, now);
         }
 
         List<CandidateAnswerQuestionView> questionViews = paperQuestionMapper.findCandidateQuestionsByPaperId(paper.getId());
@@ -92,10 +102,65 @@ public class CandidateAnsweringService {
                 .remainingSeconds(remainingSeconds(session.getDeadlineAt(), now))
                 .answeredCount(answeredCount)
                 .totalQuestionCount(questionViews.size())
+                .submittedAt(session.getSubmittedAt())
+                .submissionMethod(resolveSubmissionMethod(session.getStatus()))
                 .questions(questionViews.stream()
                         .map(question -> toQuestionItem(question, recordByQuestionId.get(question.getPaperQuestionId())))
                         .toList())
                 .build();
+    }
+
+    @Transactional
+    public CandidateExamSubmissionResponse submitExam(Long planId, CandidateUserContext context) {
+        ensureProfileConfirmed(context);
+
+        LocalDateTime now = LocalDateTime.now();
+        ExamPlan plan = requireCandidatePlan(planId, context.getExaminee().getId());
+        Paper paper = requireActivePaper(plan.getPaperId());
+        ExamAnswerSession session = findSession(planId, context.getExaminee().getId());
+        if (session == null) {
+            throw new BadRequestException("答题会话不存在");
+        }
+
+        session = normalizeSessionForRead(session, now);
+        if (isFinalSubmitted(session)) {
+            log.info("traceNo={} event=candidate_exam_submission_duplicate candidateId={} planId={} sessionId={} sessionStatus={}",
+                    TraceContext.getTraceNo(),
+                    context.getExaminee().getId(),
+                    planId,
+                    session.getId(),
+                    session.getStatus());
+            return buildSubmissionResponse(plan, paper, session);
+        }
+
+        session = finalizeSubmission(session, STATUS_SUBMITTED, now);
+        log.info("traceNo={} event=candidate_exam_submitted candidateId={} planId={} sessionId={} sessionStatus={} submissionMethod={}",
+                TraceContext.getTraceNo(),
+                context.getExaminee().getId(),
+                planId,
+                session.getId(),
+                session.getStatus(),
+                resolveSubmissionMethod(session.getStatus()));
+        return buildSubmissionResponse(plan, paper, session);
+    }
+
+    @Scheduled(fixedDelayString = "${exam.candidate.auto-submit.fixed-delay-ms:10000}")
+    @Transactional
+    public void autoSubmitExpiredSessions() {
+        LocalDateTime now = LocalDateTime.now();
+        List<ExamAnswerSession> expiredSessions = examAnswerSessionMapper.selectList(new LambdaQueryWrapper<ExamAnswerSession>()
+                .eq(ExamAnswerSession::getStatus, STATUS_IN_PROGRESS)
+                .le(ExamAnswerSession::getDeadlineAt, now));
+        for (ExamAnswerSession session : expiredSessions) {
+            finalizeSubmission(session, STATUS_AUTO_SUBMITTED, now);
+            log.info("traceNo={} event=candidate_exam_submitted candidateId={} planId={} sessionId={} sessionStatus={} submissionMethod={}",
+                    TraceContext.getTraceNo(),
+                    session.getExamineeId(),
+                    session.getExamPlanId(),
+                    session.getId(),
+                    session.getStatus(),
+                    resolveSubmissionMethod(session.getStatus()));
+        }
     }
 
     public CandidateSaveAnswerResponse saveAnswer(Long planId,
@@ -109,8 +174,28 @@ public class CandidateAnsweringService {
         if (session == null) {
             throw new BadRequestException("答题会话不存在");
         }
-        if (isExpired(session, now)) {
-            session = markTimeExpired(session, now);
+        if (isFinalSubmitted(session)) {
+            log.warn("traceNo={} event=candidate_answer_save_rejected candidateId={} planId={} sessionId={} paperQuestionId={} sessionStatus={} reason=already_submitted",
+                    TraceContext.getTraceNo(),
+                    context.getExaminee().getId(),
+                    planId,
+                    session.getId(),
+                    paperQuestionId,
+                    session.getStatus());
+            throw new ForbiddenException("试卷已提交，不能重复作答");
+        }
+        if (STATUS_TIME_EXPIRED.equals(session.getStatus())) {
+            log.warn("traceNo={} event=candidate_answer_save_rejected candidateId={} planId={} sessionId={} paperQuestionId={} sessionStatus={} reason=time_expired",
+                    TraceContext.getTraceNo(),
+                    context.getExaminee().getId(),
+                    planId,
+                    session.getId(),
+                    paperQuestionId,
+                    session.getStatus());
+            throw new ForbiddenException("答题时间已结束");
+        }
+        if (isExpiredByDeadline(session, now)) {
+            session = finalizeSubmission(session, STATUS_AUTO_SUBMITTED, now);
             log.warn("traceNo={} event=candidate_answer_save_rejected candidateId={} planId={} sessionId={} paperQuestionId={} sessionStatus={} reason=time_expired",
                     TraceContext.getTraceNo(),
                     context.getExaminee().getId(),
@@ -172,6 +257,33 @@ public class CandidateAnsweringService {
                 .build();
     }
 
+    public ExamAnswerSession normalizeSessionForRead(ExamAnswerSession session, LocalDateTime now) {
+        if (session == null) {
+            return null;
+        }
+        if (isFinalSubmitted(session)) {
+            return ensureSubmittedAt(session, now);
+        }
+        if (STATUS_TIME_EXPIRED.equals(session.getStatus()) || isExpiredByDeadline(session, now)) {
+            return finalizeSubmission(session, STATUS_AUTO_SUBMITTED, now);
+        }
+        return session;
+    }
+
+    public boolean isFinalSubmitted(ExamAnswerSession session) {
+        return session != null && isFinalStatus(session.getStatus());
+    }
+
+    public String resolveSubmissionMethod(String sessionStatus) {
+        if (STATUS_SUBMITTED.equals(sessionStatus)) {
+            return METHOD_MANUAL;
+        }
+        if (STATUS_AUTO_SUBMITTED.equals(sessionStatus)) {
+            return METHOD_AUTO;
+        }
+        return null;
+    }
+
     private void ensureProfileConfirmed(CandidateUserContext context) {
         if (!context.isProfileConfirmed()) {
             throw new ForbiddenException("请先确认身份信息");
@@ -231,7 +343,10 @@ public class CandidateAnsweringService {
         session.setPaperId(paper.getId());
         session.setStartedAt(now);
         session.setDeadlineAt(deadlineAt);
-        session.setStatus(deadlineAt.isAfter(now) ? "IN_PROGRESS" : "TIME_EXPIRED");
+        session.setStatus(deadlineAt.isAfter(now) ? STATUS_IN_PROGRESS : STATUS_AUTO_SUBMITTED);
+        if (!deadlineAt.isAfter(now)) {
+            session.setSubmittedAt(now);
+        }
         session.setCreatedAt(now);
         session.setUpdatedAt(now);
         examAnswerSessionMapper.insert(session);
@@ -239,15 +354,35 @@ public class CandidateAnsweringService {
     }
 
     private boolean isExpired(ExamAnswerSession session, LocalDateTime now) {
-        return "TIME_EXPIRED".equals(session.getStatus()) || !session.getDeadlineAt().isAfter(now);
+        return STATUS_TIME_EXPIRED.equals(session.getStatus()) || isExpiredByDeadline(session, now);
     }
 
-    private ExamAnswerSession markTimeExpired(ExamAnswerSession session, LocalDateTime now) {
-        if (!"TIME_EXPIRED".equals(session.getStatus())) {
-            session.setStatus("TIME_EXPIRED");
+    private boolean isExpiredByDeadline(ExamAnswerSession session, LocalDateTime now) {
+        return !session.getDeadlineAt().isAfter(now);
+    }
+
+    private boolean isFinalStatus(String status) {
+        return STATUS_SUBMITTED.equals(status) || STATUS_AUTO_SUBMITTED.equals(status);
+    }
+
+    private ExamAnswerSession ensureSubmittedAt(ExamAnswerSession session, LocalDateTime now) {
+        if (session.getSubmittedAt() == null) {
+            LocalDateTime submittedAt = session.getLastSavedAt() != null ? session.getLastSavedAt() : now;
+            session.setSubmittedAt(submittedAt);
             session.setUpdatedAt(now);
             examAnswerSessionMapper.updateById(session);
         }
+        return session;
+    }
+
+    private ExamAnswerSession finalizeSubmission(ExamAnswerSession session, String finalStatus, LocalDateTime now) {
+        if (isFinalSubmitted(session)) {
+            return ensureSubmittedAt(session, now);
+        }
+        session.setStatus(finalStatus);
+        session.setSubmittedAt(now);
+        session.setUpdatedAt(now);
+        examAnswerSessionMapper.updateById(session);
         return session;
     }
 
@@ -269,6 +404,25 @@ public class CandidateAnsweringService {
         return Math.toIntExact(examAnswerRecordMapper.selectCount(new LambdaQueryWrapper<ExamAnswerRecord>()
                 .eq(ExamAnswerRecord::getSessionId, sessionId)
                 .eq(ExamAnswerRecord::getAnswerStatus, "ANSWERED")));
+    }
+
+    private int countTotalQuestions(Long paperId) {
+        return Math.toIntExact(paperQuestionMapper.selectCount(new LambdaQueryWrapper<PaperQuestion>()
+                .eq(PaperQuestion::getPaperId, paperId)
+                .eq(PaperQuestion::getDeleted, 0)));
+    }
+
+    private CandidateExamSubmissionResponse buildSubmissionResponse(ExamPlan plan, Paper paper, ExamAnswerSession session) {
+        return CandidateExamSubmissionResponse.builder()
+                .planId(plan.getId())
+                .name(plan.getName())
+                .paperName(paper.getName())
+                .sessionStatus(session.getStatus())
+                .submissionMethod(resolveSubmissionMethod(session.getStatus()))
+                .submittedAt(session.getSubmittedAt())
+                .answeredCount(countAnswered(session.getId()))
+                .totalQuestionCount(countTotalQuestions(session.getPaperId()))
+                .build();
     }
 
     private CandidateAnswerQuestionItemResponse toQuestionItem(CandidateAnswerQuestionView questionView, ExamAnswerRecord record) {

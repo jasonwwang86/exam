@@ -27,6 +27,8 @@ export type CandidateExam = {
   canEnterAnswering: boolean;
   answeringStatus: string;
   remainingSeconds: number | null;
+  submittedAt?: string;
+  submissionMethod?: string;
 };
 
 export type CandidateQuestionOption = {
@@ -60,6 +62,8 @@ export type CandidateAnswerSession = {
   remainingSeconds: number;
   answeredCount: number;
   totalQuestionCount: number;
+  submittedAt?: string;
+  submissionMethod?: string;
   questions: CandidateAnswerQuestion[];
 };
 
@@ -70,4 +74,15 @@ export type CandidateSaveAnswerResult = {
   remainingSeconds: number;
   sessionStatus: string;
   answeredCount: number;
+};
+
+export type CandidateExamSubmissionResult = {
+  planId: number;
+  name: string;
+  paperName: string;
+  sessionStatus: string;
+  submissionMethod: string;
+  submittedAt: string;
+  answeredCount: number;
+  totalQuestionCount: number;
 };

@@ -4,6 +4,7 @@ import cn.jack.exam.config.CandidateUserContextHolder;
 import cn.jack.exam.dto.candidate.CandidateAvailableExamResponse;
 import cn.jack.exam.dto.candidate.CandidateAnswerSessionResponse;
 import cn.jack.exam.dto.candidate.CandidateConfirmResponse;
+import cn.jack.exam.dto.candidate.CandidateExamSubmissionResponse;
 import cn.jack.exam.dto.candidate.CandidateLoginRequest;
 import cn.jack.exam.dto.candidate.CandidateLoginResponse;
 import cn.jack.exam.dto.candidate.CandidateProfileResponse;
@@ -54,6 +55,11 @@ public class CandidatePortalController {
     @PutMapping("/exams/{planId}/answer-session")
     public CandidateAnswerSessionResponse loadAnswerSession(@PathVariable Long planId) {
         return candidateAnsweringService.loadAnswerSession(planId, CandidateUserContextHolder.getRequired());
+    }
+
+    @PostMapping("/exams/{planId}/submission")
+    public CandidateExamSubmissionResponse submitExam(@PathVariable Long planId) {
+        return candidateAnsweringService.submitExam(planId, CandidateUserContextHolder.getRequired());
     }
 
     @PutMapping("/exams/{planId}/questions/{paperQuestionId}/answer")

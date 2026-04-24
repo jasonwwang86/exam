@@ -20,5 +20,7 @@ public class CandidateAnswerSessionResponse {
     private Long remainingSeconds;
     private Integer answeredCount;
     private Integer totalQuestionCount;
+    private LocalDateTime submittedAt;
+    private String submissionMethod;
     private List<CandidateAnswerQuestionItemResponse> questions;
 }

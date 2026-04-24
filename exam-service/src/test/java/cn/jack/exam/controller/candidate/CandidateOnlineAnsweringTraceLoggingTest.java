@@ -131,6 +131,33 @@ class CandidateOnlineAnsweringTraceLoggingTest {
         assertThat(output.getOut()).doesNotContain(token);
     }
 
+    @Test
+    void shouldLogSubmissionWithoutLeakingSensitiveFields(CapturedOutput output) throws Exception {
+        Long planId = insertExamPlanForExaminee(
+                202L,
+                "日志校验交卷场次",
+                LocalDateTime.now().minusMinutes(15),
+                LocalDateTime.now().plusMinutes(30),
+                1L);
+        String traceNo = "c23e4567e89b12d3a456426614174000";
+        String token = confirmCandidateAndExtractToken();
+
+        mockMvc.perform(put("/api/candidate/exams/{planId}/answer-session", planId)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/candidate/exams/{planId}/submission", planId)
+                        .header("TraceNo", traceNo)
+                        .header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk())
+                .andExpect(header().string("TraceNo", traceNo));
+
+        assertThat(output.getOut()).contains(traceNo);
+        assertThat(output.getOut()).contains("candidate_exam_submitted");
+        assertThat(output.getOut()).doesNotContain(token);
+        assertThat(output.getOut()).doesNotContain("Authorization: Bearer " + token);
+    }
+
     private String confirmCandidateAndExtractToken() throws Exception {
         MvcResult loginResult = mockMvc.perform(post("/api/candidate/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)

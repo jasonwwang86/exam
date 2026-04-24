@@ -18,4 +18,6 @@ public class CandidateAvailableExamResponse {
     private Boolean canEnterAnswering;
     private String answeringStatus;
     private Long remainingSeconds;
+    private LocalDateTime submittedAt;
+    private String submissionMethod;
 }

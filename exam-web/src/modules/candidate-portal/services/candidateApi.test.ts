@@ -203,4 +203,34 @@ describe('candidateApi TraceNo headers', () => {
       },
     );
   });
+
+  it('sends Authorization and TraceNo headers when submitting candidate exam', async () => {
+    mockPost.mockResolvedValue({
+      data: {
+        planId: 1,
+        name: 'Java 在线答题场次',
+        paperName: 'Java 基础试卷',
+        sessionStatus: 'SUBMITTED',
+        submissionMethod: 'MANUAL',
+        submittedAt: '2026-05-01T09:45:00',
+        answeredCount: 1,
+        totalQuestionCount: 2,
+      },
+    });
+
+    const api = await import('./candidateApi');
+
+    await (api as any).submitCandidateExam('candidate-token-2', 1);
+
+    expect(mockPost).toHaveBeenCalledWith(
+      '/api/candidate/exams/1/submission',
+      {},
+      {
+        headers: {
+          Authorization: 'Bearer candidate-token-2',
+          TraceNo: '123e4567e89b12d3a456426614174000',
+        },
+      },
+    );
+  });
 });

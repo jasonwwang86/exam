@@ -152,6 +152,7 @@ create table exam_answer_session (
     deadline_at timestamp not null,
     status varchar(32) not null,
     last_saved_at timestamp,
+    submitted_at timestamp,
     created_at timestamp not null,
     updated_at timestamp not null,
     unique (exam_plan_id, examinee_id)

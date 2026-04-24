@@ -3,6 +3,7 @@ import { withTraceNo } from '../../../shared/utils/trace';
 import type {
   CandidateAnswerSession,
   CandidateExam,
+  CandidateExamSubmissionResult,
   CandidateProfile,
   CandidateProfileSummary,
   CandidateSaveAnswerResult,
@@ -83,6 +84,17 @@ export async function saveCandidateAnswer(
     {
       answerContent,
     },
+    withTraceNo({
+      Authorization: `Bearer ${token}`,
+    }),
+  );
+  return response.data;
+}
+
+export async function submitCandidateExam(token: string, planId: number) {
+  const response = await client.post<CandidateExamSubmissionResult>(
+    `/api/candidate/exams/${planId}/submission`,
+    {},
     withTraceNo({
       Authorization: `Bearer ${token}`,
     }),

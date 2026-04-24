@@ -31,6 +31,7 @@ public class CandidateAuthService {
     private final ExamPlanMapper examPlanMapper;
     private final ExamAnswerSessionMapper examAnswerSessionMapper;
     private final CandidateTokenService candidateTokenService;
+    private final CandidateAnsweringService candidateAnsweringService;
 
     public CandidateLoginResponse login(CandidateLoginRequest request) {
         Examinee examinee = examineeMapper.selectOne(new LambdaQueryWrapper<Examinee>()
@@ -156,6 +157,16 @@ public class CandidateAuthService {
             exam.setAnsweringStatus("NOT_STARTED");
             exam.setRemainingSeconds(null);
             exam.setCanEnterAnswering(!now.isBefore(exam.getStartTime()) && now.isBefore(exam.getEndTime()));
+            return;
+        }
+
+        session = candidateAnsweringService.normalizeSessionForRead(session, now);
+        if (candidateAnsweringService.isFinalSubmitted(session)) {
+            exam.setAnsweringStatus(session.getStatus());
+            exam.setRemainingSeconds(0L);
+            exam.setCanEnterAnswering(false);
+            exam.setSubmittedAt(session.getSubmittedAt());
+            exam.setSubmissionMethod(candidateAnsweringService.resolveSubmissionMethod(session.getStatus()));
             return;
         }
 

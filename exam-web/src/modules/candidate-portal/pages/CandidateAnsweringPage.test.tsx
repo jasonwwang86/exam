@@ -166,4 +166,54 @@ describe('CandidateAnsweringPage', () => {
     expect(screen.getByRole('button', { name: '保存当前答案' })).toBeDisabled();
     expect(screen.getByRole('radio', { name: 'main' })).toBeDisabled();
   });
+
+  it('opens submit confirmation and does not submit when user cancels', async () => {
+    const user = userEvent.setup();
+    const onSubmitPaper = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <CandidateAnsweringPage
+        {...({
+          session: buildSession(),
+          submitting: false,
+          errorMessage: '',
+          onSaveAnswer: vi.fn<() => Promise<CandidateSaveAnswerResult>>(),
+          onSubmitPaper,
+          onBackToExamList: vi.fn(),
+          onLogout: vi.fn(),
+        } as any)}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: '提交试卷' }));
+
+    expect(screen.getByText('确认提交试卷后将不能继续作答。')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '继续作答' }));
+
+    expect(onSubmitPaper).not.toHaveBeenCalled();
+  });
+
+  it('renders auto-submitted result view for finished session', () => {
+    render(
+      <CandidateAnsweringPage
+        {...({
+          session: buildSession({
+            sessionStatus: 'AUTO_SUBMITTED',
+            submittedAt: '2026-05-01T10:00:00',
+            submissionMethod: 'AUTO',
+          } as any),
+          submitting: false,
+          errorMessage: '',
+          onSaveAnswer: vi.fn<() => Promise<CandidateSaveAnswerResult>>(),
+          onSubmitPaper: vi.fn(),
+          onBackToExamList: vi.fn(),
+          onLogout: vi.fn(),
+        } as any)}
+      />,
+    );
+
+    expect(screen.getByText('试卷已自动提交')).toBeInTheDocument();
+    expect(screen.getByText('提交时间 2026-05-01T10:00:00')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '保存当前答案' })).not.toBeInTheDocument();
+  });
 });

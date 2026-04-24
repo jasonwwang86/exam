@@ -22,6 +22,12 @@ function resolveAnsweringStatusText(exam: CandidateExam) {
   if (exam.answeringStatus === 'IN_PROGRESS') {
     return formatRemainingMinutes(exam.remainingSeconds);
   }
+  if (exam.answeringStatus === 'SUBMITTED') {
+    return '已提交';
+  }
+  if (exam.answeringStatus === 'AUTO_SUBMITTED') {
+    return '已自动提交';
+  }
   if (exam.answeringStatus === 'TIME_EXPIRED') {
     return '答题时间已结束';
   }
@@ -67,6 +73,7 @@ export function CandidateExamListPage({ exams, submitting, errorMessage, onRefre
                     <span>
                       {exam.startTime} 至 {exam.endTime}
                     </span>
+                    {exam.submittedAt ? <span>{`提交时间 ${exam.submittedAt}`}</span> : null}
                     {exam.remark ? <span>{exam.remark}</span> : null}
                   </div>
                   <div className={styles.itemActions}>

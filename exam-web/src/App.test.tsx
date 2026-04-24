@@ -911,4 +911,117 @@ describe('App', () => {
     expect(screen.getByText('当前已答 1 / 2 题')).toBeInTheDocument();
     expect(screen.getByRole('radio', { name: 'main' })).toBeChecked();
   });
+
+  it('submits exam after candidate confirmation and shows submission result', async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem('candidate_token', 'candidate-token-submit');
+    window.localStorage.setItem(
+      'candidate_profile',
+      JSON.stringify({
+        examineeId: 1,
+        examineeNo: 'EX2026001',
+        name: '张三',
+        maskedIdCardNo: '110101********0011',
+        profileConfirmed: true,
+        message: '身份信息已确认，可查看可参加考试',
+      }),
+    );
+    window.localStorage.setItem(
+      'candidate_exams',
+      JSON.stringify([
+        {
+          planId: 1,
+          name: 'Java 在线答题场次',
+          paperName: 'Java 基础试卷',
+          durationMinutes: 120,
+          startTime: '2026-05-01T09:00:00',
+          endTime: '2026-05-01T12:00:00',
+          displayStatus: '进行中',
+          remark: '可作答',
+          canEnterAnswering: true,
+          answeringStatus: 'IN_PROGRESS',
+          remainingSeconds: 2400,
+        },
+      ]),
+    );
+    window.history.pushState({}, '', '/candidate/exams');
+    mockPut.mockResolvedValueOnce({
+      data: {
+        planId: 1,
+        name: 'Java 在线答题场次',
+        paperName: 'Java 基础试卷',
+        durationMinutes: 120,
+        sessionStatus: 'IN_PROGRESS',
+        startedAt: '2026-05-01T09:10:00',
+        deadlineAt: '2099-05-01T10:00:00',
+        remainingSeconds: 2400,
+        answeredCount: 1,
+        totalQuestionCount: 2,
+        questions: [
+          {
+            paperQuestionId: 1,
+            questionId: 1,
+            questionNo: 1,
+            stem: 'Java 的入口方法是什么？',
+            questionTypeName: '单选题',
+            answerMode: 'SINGLE_CHOICE',
+            answerConfig: {
+              options: [
+                { key: 'A', content: 'main' },
+                { key: 'B', content: 'run' },
+              ],
+            },
+            savedAnswer: {
+              selectedOption: 'A',
+            },
+            answerStatus: 'ANSWERED',
+          },
+          {
+            paperQuestionId: 2,
+            questionId: 2,
+            questionNo: 2,
+            stem: '请写出 JVM 的英文全称。',
+            questionTypeName: '简答题',
+            answerMode: 'TEXT',
+            answerConfig: {},
+            savedAnswer: null,
+            answerStatus: 'UNANSWERED',
+          },
+        ],
+      },
+    });
+    mockPost.mockResolvedValueOnce({
+      data: {
+        planId: 1,
+        name: 'Java 在线答题场次',
+        paperName: 'Java 基础试卷',
+        sessionStatus: 'SUBMITTED',
+        submissionMethod: 'MANUAL',
+        submittedAt: '2026-05-01T09:40:00',
+        answeredCount: 1,
+        totalQuestionCount: 2,
+      },
+    });
+
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: '进入答题' }));
+    expect(await screen.findByRole('heading', { name: 'Java 在线答题场次' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '提交试卷' }));
+    expect(screen.getByText('确认提交试卷后将不能继续作答。')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '确认提交' }));
+
+    expect(await screen.findByText('试卷已提交')).toBeInTheDocument();
+    expect(mockPost).toHaveBeenCalledWith(
+      '/api/candidate/exams/1/submission',
+      {},
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer candidate-token-submit',
+        }),
+      }),
+    );
+  });
 });

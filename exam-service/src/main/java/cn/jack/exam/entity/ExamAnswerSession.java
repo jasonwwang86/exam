@@ -35,6 +35,9 @@ public class ExamAnswerSession {
     @TableField("last_saved_at")
     private LocalDateTime lastSavedAt;
 
+    @TableField("submitted_at")
+    private LocalDateTime submittedAt;
+
     @TableField("created_at")
     private LocalDateTime createdAt;
 

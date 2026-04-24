@@ -151,11 +151,13 @@ create table if not exists exam_answer_session (
     deadline_at datetime not null,
     status varchar(32) not null,
     last_saved_at datetime null,
+    submitted_at datetime null,
     created_at datetime not null,
     updated_at datetime not null,
     unique key uk_exam_answer_session (exam_plan_id, examinee_id),
     key idx_exam_answer_session_examinee_id (examinee_id),
-    key idx_exam_answer_session_status (status)
+    key idx_exam_answer_session_status (status),
+    key idx_exam_answer_session_status_deadline (status, deadline_at)
 );
 
 create table if not exists exam_answer_record (

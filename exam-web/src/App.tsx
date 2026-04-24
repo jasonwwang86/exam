@@ -10,13 +10,20 @@ import {
   loadCandidateAnswerSession,
   loginCandidate,
   saveCandidateAnswer,
+  submitCandidateExam,
 } from './modules/candidate-portal/services/candidateApi';
 import { CandidateAnsweringPage } from './modules/candidate-portal/pages/CandidateAnsweringPage';
 import { CandidateConfirmationPage } from './modules/candidate-portal/pages/CandidateConfirmationPage';
 import { CandidateExamListPage } from './modules/candidate-portal/pages/CandidateExamListPage';
 import { CandidateLoadingPage } from './modules/candidate-portal/pages/CandidateLoadingPage';
 import { CandidateLoginPage } from './modules/candidate-portal/pages/CandidateLoginPage';
-import type { CandidateAnswerSession, CandidateExam, CandidateLoginFormState, CandidateProfile } from './modules/candidate-portal/types';
+import type {
+  CandidateAnswerSession,
+  CandidateExam,
+  CandidateExamSubmissionResult,
+  CandidateLoginFormState,
+  CandidateProfile,
+} from './modules/candidate-portal/types';
 import { DashboardPage } from './modules/dashboard/pages/DashboardPage';
 import { ExamPlanManagementPage } from './modules/exam-plan-management/pages/ExamPlanManagementPage';
 import { ExamineeManagementPage } from './modules/examinees/pages/ExamineeManagementPage';
@@ -441,6 +448,30 @@ function CandidatePortalApp() {
     }
   }
 
+  async function handleSubmitPaper(planId: number) {
+    if (!accessToken) {
+      throw new Error('missing candidate token');
+    }
+
+    setSubmitting(true);
+    setErrorMessage('');
+    try {
+      const submission = await submitCandidateExam(accessToken, planId);
+      setAnswerSession((current) => mergeSubmissionIntoSession(current, submission));
+      setExams((current) => {
+        const next = current.map((exam) => (exam.planId === planId ? mergeSubmissionIntoExam(exam, submission) : exam));
+        writeCandidateExamsCache(next);
+        return next;
+      });
+      return submission;
+    } catch (error) {
+      setErrorMessage(extractErrorMessage(error, '提交试卷失败，请稍后重试'));
+      throw error;
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
   if (loading) {
     return <CandidateLoadingPage />;
   }
@@ -505,6 +536,7 @@ function CandidatePortalApp() {
               errorMessage={errorMessage}
               onLoadAnswerSession={(planId) => void handleLoadAnsweringSession(planId)}
               onSaveAnswer={handleSaveAnswer}
+              onSubmitPaper={(planId) => void handleSubmitPaper(planId)}
               onBackToExamList={() => {
                 setErrorMessage('');
                 navigate('/candidate/exams', { replace: true });
@@ -528,6 +560,7 @@ type CandidateAnsweringRouteProps = {
   errorMessage: string;
   onLoadAnswerSession: (planId: number) => void;
   onSaveAnswer: (planId: number, paperQuestionId: number, answerContent: Record<string, unknown> | null) => Promise<any>;
+  onSubmitPaper: (planId: number) => Promise<any>;
   onBackToExamList: () => void;
   onLogout: () => void;
 };
@@ -539,6 +572,7 @@ function CandidateAnsweringRoute({
   errorMessage,
   onLoadAnswerSession,
   onSaveAnswer,
+  onSubmitPaper,
   onBackToExamList,
   onLogout,
 }: CandidateAnsweringRouteProps) {
@@ -568,6 +602,7 @@ function CandidateAnsweringRoute({
       submitting={submitting}
       errorMessage={errorMessage}
       onSaveAnswer={(paperQuestionId, answerContent) => onSaveAnswer(planId, paperQuestionId, answerContent)}
+      onSubmitPaper={() => onSubmitPaper(planId)}
       onBackToExamList={onBackToExamList}
       onLogout={onLogout}
     />
@@ -608,6 +643,31 @@ function readCandidateExamsCache() {
 
 function writeCandidateExamsCache(exams: CandidateExam[]) {
   window.localStorage.setItem(CANDIDATE_EXAMS_STORAGE_KEY, JSON.stringify(exams));
+}
+
+function mergeSubmissionIntoSession(current: CandidateAnswerSession | null, submission: CandidateExamSubmissionResult) {
+  if (!current || current.planId !== submission.planId) {
+    return current;
+  }
+  return {
+    ...current,
+    sessionStatus: submission.sessionStatus,
+    submissionMethod: submission.submissionMethod,
+    submittedAt: submission.submittedAt,
+    answeredCount: submission.answeredCount,
+    totalQuestionCount: submission.totalQuestionCount,
+  };
+}
+
+function mergeSubmissionIntoExam(exam: CandidateExam, submission: CandidateExamSubmissionResult): CandidateExam {
+  return {
+    ...exam,
+    canEnterAnswering: false,
+    answeringStatus: submission.sessionStatus,
+    remainingSeconds: 0,
+    submittedAt: submission.submittedAt,
+    submissionMethod: submission.submissionMethod,
+  };
 }
 
 function resolveCandidatePath(requestedPath: string, profileConfirmed: boolean) {
