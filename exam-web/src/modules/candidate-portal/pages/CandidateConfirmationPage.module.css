@@ -1,0 +1,78 @@
+.page {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 28px;
+  background:
+    radial-gradient(circle at top right, rgba(241, 186, 118, 0.16), transparent 28%),
+    linear-gradient(180deg, #fcf8ef 0%, #fffdf8 100%);
+}
+
+.card {
+  width: min(100%, 680px);
+  display: grid;
+  gap: 24px;
+  padding: 30px;
+  border-radius: 28px;
+  border: 1px solid rgba(123, 95, 53, 0.12);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 22px 46px rgba(96, 75, 42, 0.1);
+}
+
+.header {
+  display: grid;
+  gap: 10px;
+}
+
+.eyebrow {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9a6e2c;
+}
+
+.title {
+  margin: 0 !important;
+  color: #2f2618 !important;
+}
+
+.description {
+  margin: 0 !important;
+  color: #7d7264 !important;
+}
+
+.grid {
+  display: grid;
+  gap: 14px;
+}
+
+.item {
+  display: grid;
+  gap: 6px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: #fffaf0;
+  border: 1px solid rgba(154, 110, 44, 0.12);
+}
+
+.itemLabel {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #9a6e2c;
+}
+
+.itemValue {
+  font-size: 18px;
+  font-weight: 600;
+  color: #2f2618;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  flex-wrap: wrap;
+}

@@ -461,4 +461,265 @@ describe('App', () => {
     expect(screen.getByRole('link', { name: '考试计划' })).toHaveAttribute('aria-current', 'page');
     expect(screen.getByText('Java 基础考试-上午场')).toBeInTheDocument();
   });
+
+  it('shows candidate login form on candidate route when there is no authenticated session', () => {
+    window.history.pushState({}, '', '/candidate/login');
+
+    render(<App />);
+
+    expect(screen.getByRole('heading', { name: '考生登录' })).toBeInTheDocument();
+    expect(screen.getByText('考生登录入口')).toBeInTheDocument();
+    expect(screen.getByLabelText('考生编号')).toBeInTheDocument();
+    expect(screen.getByLabelText('身份证号')).toBeInTheDocument();
+    expect(screen.queryByText('业务导航')).not.toBeInTheDocument();
+  });
+
+  it('validates required candidate login fields before sending request', async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, '', '/candidate/login');
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '登录并进入待考页' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('请输入考生编号和身份证号');
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  it('logs in candidate, confirms profile, and then shows available exams', async () => {
+    const user = userEvent.setup();
+    window.history.pushState({}, '', '/candidate/login');
+    mockPost
+      .mockResolvedValueOnce({
+        data: {
+          token: 'candidate-token-1',
+          tokenType: 'Bearer',
+          profileConfirmed: false,
+          profile: {
+            examineeId: 1,
+            examineeNo: 'EX2026001',
+            name: '张三',
+            maskedIdCardNo: '110101********0011',
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          token: 'candidate-token-2',
+          tokenType: 'Bearer',
+          profileConfirmed: true,
+          profile: {
+            examineeId: 1,
+            examineeNo: 'EX2026001',
+            name: '张三',
+            maskedIdCardNo: '110101********0011',
+          },
+        },
+      });
+    mockGet.mockResolvedValueOnce({
+      data: [
+        {
+          planId: 1,
+          name: 'Java 基础考试-上午场',
+          paperName: 'Java 基础试卷',
+          durationMinutes: 120,
+          startTime: '2026-05-01T09:00:00',
+          endTime: '2026-05-01T12:00:00',
+          displayStatus: '待开始',
+          remark: '首场安排',
+        },
+      ],
+    });
+
+    render(<App />);
+
+    await user.type(screen.getByLabelText('考生编号'), 'EX2026001');
+    await user.type(screen.getByLabelText('身份证号'), '110101199001010011');
+    await user.click(screen.getByRole('button', { name: '登录并进入待考页' }));
+
+    expect(await screen.findByRole('heading', { name: '确认身份信息' })).toBeInTheDocument();
+    expect(screen.getByText('张三')).toBeInTheDocument();
+    expect(screen.getByText('110101********0011')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '确认信息并查看考试' }));
+
+    expect(await screen.findByRole('heading', { name: '可参加考试' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('candidate_token')).toBe('candidate-token-2');
+    expect(screen.getByText('Java 基础考试-上午场')).toBeInTheDocument();
+    expect(screen.getByText('Java 基础试卷')).toBeInTheDocument();
+  });
+
+  it('redirects restored unconfirmed candidate session back to confirmation page', async () => {
+    window.localStorage.setItem('candidate_token', 'candidate-token-restore');
+    window.history.pushState({}, '', '/candidate/exams');
+    mockGet.mockResolvedValueOnce({
+      data: {
+        examineeId: 1,
+        examineeNo: 'EX2026001',
+        name: '张三',
+        maskedIdCardNo: '110101********0011',
+        profileConfirmed: false,
+        message: '请先确认身份信息后查看可参加考试',
+      },
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '确认身份信息' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: '可参加考试' })).not.toBeInTheDocument();
+  });
+
+  it('shows empty state when confirmed candidate has no available exams', async () => {
+    window.localStorage.setItem('candidate_token', 'candidate-token-restore');
+    window.history.pushState({}, '', '/candidate/exams');
+    mockGet
+      .mockResolvedValueOnce({
+        data: {
+          examineeId: 1,
+          examineeNo: 'EX2026001',
+          name: '张三',
+          maskedIdCardNo: '110101********0011',
+          profileConfirmed: true,
+          message: '身份信息已确认，可查看可参加考试',
+        },
+      })
+      .mockResolvedValueOnce({
+        data: [],
+      });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '可参加考试' })).toBeInTheDocument();
+    expect(screen.getByText('当前暂无可参加的考试')).toBeInTheDocument();
+  });
+
+  it('allows candidate to log out from confirmation page', async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem('candidate_token', 'candidate-token-confirm');
+    window.localStorage.setItem(
+      'candidate_profile',
+      JSON.stringify({
+        examineeId: 1,
+        examineeNo: 'EX2026001',
+        name: '张三',
+        maskedIdCardNo: '110101********0011',
+        profileConfirmed: false,
+        message: '请先确认身份信息后查看可参加考试',
+      }),
+    );
+    window.history.pushState({}, '', '/candidate/confirm');
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '确认身份信息' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '退出登录' }));
+
+    expect(await screen.findByRole('heading', { name: '考生登录' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('candidate_token')).toBeNull();
+    expect(window.localStorage.getItem('candidate_profile')).toBeNull();
+    expect(window.localStorage.getItem('candidate_exams')).toBeNull();
+  });
+
+  it('refreshes candidate exams and overwrites cached exam list', async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem('candidate_token', 'candidate-token-exams');
+    window.localStorage.setItem(
+      'candidate_profile',
+      JSON.stringify({
+        examineeId: 1,
+        examineeNo: 'EX2026001',
+        name: '张三',
+        maskedIdCardNo: '110101********0011',
+        profileConfirmed: true,
+        message: '身份信息已确认，可查看可参加考试',
+      }),
+    );
+    window.localStorage.setItem(
+      'candidate_exams',
+      JSON.stringify([
+        {
+          planId: 1,
+          name: '缓存中的旧考试',
+          paperName: '旧试卷',
+          durationMinutes: 90,
+          startTime: '2026-05-01T09:00:00',
+          endTime: '2026-05-01T10:30:00',
+          displayStatus: '待开始',
+          remark: '旧数据',
+        },
+      ]),
+    );
+    window.history.pushState({}, '', '/candidate/exams');
+    mockGet.mockResolvedValueOnce({
+      data: [
+        {
+          planId: 2,
+          name: 'Java 进阶考试-下午场',
+          paperName: 'Java 进阶试卷',
+          durationMinutes: 120,
+          startTime: '2026-05-02T14:00:00',
+          endTime: '2026-05-02T16:00:00',
+          displayStatus: '待开始',
+          remark: '最新安排',
+        },
+      ],
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '可参加考试' })).toBeInTheDocument();
+    expect(screen.getByText('缓存中的旧考试')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '刷新考试列表' }));
+
+    expect(await screen.findByText('Java 进阶考试-下午场')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('缓存中的旧考试')).not.toBeInTheDocument();
+    });
+    expect(window.localStorage.getItem('candidate_exams')).toContain('Java 进阶考试-下午场');
+  });
+
+  it('allows candidate to log out from exam list page', async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem('candidate_token', 'candidate-token-exams');
+    window.localStorage.setItem(
+      'candidate_profile',
+      JSON.stringify({
+        examineeId: 1,
+        examineeNo: 'EX2026001',
+        name: '张三',
+        maskedIdCardNo: '110101********0011',
+        profileConfirmed: true,
+        message: '身份信息已确认，可查看可参加考试',
+      }),
+    );
+    window.localStorage.setItem(
+      'candidate_exams',
+      JSON.stringify([
+        {
+          planId: 1,
+          name: 'Java 基础考试-上午场',
+          paperName: 'Java 基础试卷',
+          durationMinutes: 120,
+          startTime: '2026-05-01T09:00:00',
+          endTime: '2026-05-01T12:00:00',
+          displayStatus: '待开始',
+          remark: '首场安排',
+        },
+      ]),
+    );
+    window.history.pushState({}, '', '/candidate/exams');
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '可参加考试' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '退出登录' }));
+
+    expect(await screen.findByRole('heading', { name: '考生登录' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('candidate_token')).toBeNull();
+    expect(window.localStorage.getItem('candidate_profile')).toBeNull();
+    expect(window.localStorage.getItem('candidate_exams')).toBeNull();
+  });
 });

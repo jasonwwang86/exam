@@ -84,4 +84,29 @@
           and e.deleted = 0
           and e.status = 'ENABLED'
     </select>
+
+    <select id="findAvailableForCandidate" resultType="cn.jack.exam.dto.candidate.CandidateAvailableExamResponse">
+        select ep.id as plan_id,
+               ep.name,
+               p.name as paper_name,
+               p.duration_minutes,
+               ep.start_time,
+               ep.end_time,
+               case
+                   when ep.start_time &gt; #{now} then '待开始'
+                   else '进行中'
+               end as display_status,
+               ep.remark
+        from exam_plan_examinee epe
+        inner join exam_plan ep on ep.id = epe.exam_plan_id
+        inner join paper p on p.id = ep.paper_id and p.deleted = 0
+        inner join examinee e on e.id = epe.examinee_id
+        where epe.examinee_id = #{examineeId}
+          and e.deleted = 0
+          and e.status = 'ENABLED'
+          and ep.deleted = 0
+          and ep.status = 'PUBLISHED'
+          and ep.end_time &gt; #{now}
+        order by ep.start_time asc
+    </select>
 </mapper>
