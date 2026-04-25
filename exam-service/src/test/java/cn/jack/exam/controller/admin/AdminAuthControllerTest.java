@@ -115,7 +115,10 @@ class AdminAuthControllerTest {
         mockMvc.perform(get("/api/admin/dashboard/summary")
                         .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.message").value("ok"));
+                .andExpect(jsonPath("$.monthlyNewExamineeCount").value(3))
+                .andExpect(jsonPath("$.monthlyNewQuestionCount").value(3))
+                .andExpect(jsonPath("$.monthlyNewPaperCount").value(2))
+                .andExpect(jsonPath("$.monthlyActiveExamPlanCount").value(0));
     }
 
     @Test

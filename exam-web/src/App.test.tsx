@@ -74,34 +74,7 @@ describe('App', () => {
         ],
       },
     });
-
-    render(<App />);
-
-    await user.type(screen.getByLabelText('用户名'), 'admin');
-    await user.type(screen.getByLabelText('密码'), 'Admin@123456');
-    await user.click(screen.getByRole('button', { name: '登录' }));
-
-    await waitFor(() => {
-      expect(window.localStorage.getItem('admin_token')).toBe('token-123');
-    });
-    expect(await screen.findByRole('heading', { name: '管理首页' })).toBeInTheDocument();
-    expect(screen.getByText('系统管理员')).toBeInTheDocument();
-  });
-
-  it('validates required login fields before sending request', async () => {
-    const user = userEvent.setup();
-
-    render(<App />);
-
-    await user.click(screen.getByRole('button', { name: '登录' }));
-
-    expect(screen.getByRole('alert')).toHaveTextContent('请输入用户名和密码');
-    expect(mockPost).not.toHaveBeenCalled();
-  });
-
-  it('restores current user from stored token on app start', async () => {
-    window.localStorage.setItem('admin_token', 'token-restore');
-    mockGet.mockResolvedValue({
+    mockGet.mockResolvedValueOnce({
       data: {
         userId: 1,
         username: 'admin',
@@ -117,12 +90,72 @@ describe('App', () => {
         ],
       },
     });
+    mockGet.mockResolvedValueOnce({
+      data: {
+        monthlyNewExamineeCount: 3,
+        monthlyNewQuestionCount: 3,
+        monthlyNewPaperCount: 2,
+        monthlyActiveExamPlanCount: 0,
+      },
+    });
 
     render(<App />);
 
+    await user.type(screen.getByLabelText('用户名'), 'admin');
+    await user.type(screen.getByLabelText('密码'), 'Admin@123456');
+    await user.click(screen.getByRole('button', { name: '登录' }));
+
+    await waitFor(() => {
+      expect(window.localStorage.getItem('admin_token')).toBe('token-123');
+    });
     expect(await screen.findByRole('heading', { name: '管理首页' })).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '管理首页' })).toHaveAttribute('href', '/dashboard');
-    expect(screen.getByRole('link', { name: '管理首页' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getAllByText('系统管理员')).toHaveLength(2);
+  });
+
+  it('validates required login fields before sending request', async () => {
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(screen.getByRole('button', { name: '登录' }));
+
+    expect(screen.getByRole('alert')).toHaveTextContent('请输入用户名和密码');
+    expect(mockPost).not.toHaveBeenCalled();
+  });
+
+  it('restores current user from stored token on app start', async () => {
+    window.localStorage.setItem('admin_token', 'token-restore');
+    mockGet
+      .mockResolvedValueOnce({
+        data: {
+          userId: 1,
+          username: 'admin',
+          displayName: '系统管理员',
+          roles: ['SUPER_ADMIN'],
+          permissions: ['dashboard:view', 'dashboard:read'],
+          menus: [
+            {
+              code: 'dashboard:view',
+              name: '管理首页',
+              path: '/dashboard',
+            },
+          ],
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          monthlyNewExamineeCount: 3,
+          monthlyNewQuestionCount: 3,
+          monthlyNewPaperCount: 2,
+          monthlyActiveExamPlanCount: 0,
+        },
+      });
+
+    render(<App />);
+
+    expect(await screen.findByRole('link', { name: '管理首页' })).toHaveAttribute('href', '/dashboard');
+    expect(screen.queryByRole('heading', { name: '管理员登录' })).not.toBeInTheDocument();
+    expect(screen.getAllByText('系统管理员').length).toBeGreaterThan(0);
   });
 
   it('clears invalid stored token and returns to login page', async () => {
@@ -184,6 +217,30 @@ describe('App', () => {
             path: '/dashboard',
           },
         ],
+      },
+    });
+    mockGet.mockResolvedValueOnce({
+      data: {
+        userId: 1,
+        username: 'admin',
+        displayName: '系统管理员',
+        roles: ['SUPER_ADMIN'],
+        permissions: ['dashboard:view', 'dashboard:read'],
+        menus: [
+          {
+            code: 'dashboard:view',
+            name: '管理首页',
+            path: '/dashboard',
+          },
+        ],
+      },
+    });
+    mockGet.mockResolvedValueOnce({
+      data: {
+        monthlyNewExamineeCount: 3,
+        monthlyNewQuestionCount: 3,
+        monthlyNewPaperCount: 2,
+        monthlyActiveExamPlanCount: 0,
       },
     });
 

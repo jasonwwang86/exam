@@ -162,7 +162,10 @@ function AdminAuthApp() {
       <Routes>
         <Route path="/login" element={<Navigate to={defaultAuthorizedPath} replace />} />
         <Route path="/" element={<Navigate to={defaultAuthorizedPath} replace />} />
-        <Route path="/dashboard" element={canViewDashboard ? <DashboardPage /> : <NoPermissionPage />} />
+        <Route
+          path="/dashboard"
+          element={canViewDashboard ? <DashboardPage token={accessToken} currentUser={currentUser} /> : <NoPermissionPage />}
+        />
         <Route
           path="/examinees"
           element={canViewExaminees ? <ExamineeManagementPage token={accessToken} permissions={currentUser.permissions} /> : <NoPermissionPage />}

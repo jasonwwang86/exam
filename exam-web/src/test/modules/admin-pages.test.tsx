@@ -1,5 +1,14 @@
 import { render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, expect, it, vi } from 'vitest';
+
+const { mockFetchDashboardSummary } = vi.hoisted(() => ({
+  mockFetchDashboardSummary: vi.fn(),
+}));
+
+vi.mock('../../modules/dashboard/services/dashboardApi', () => ({
+  fetchDashboardSummary: mockFetchDashboardSummary,
+}));
 
 describe('admin pages', () => {
   it('renders standalone login page component', async () => {
@@ -28,13 +37,34 @@ describe('admin pages', () => {
 
   it('renders standalone dashboard page component', async () => {
     const { DashboardPage } = await import('../../modules/dashboard/pages/DashboardPage');
+    mockFetchDashboardSummary.mockResolvedValue({
+      monthlyNewExamineeCount: 3,
+      monthlyNewQuestionCount: 3,
+      monthlyNewPaperCount: 2,
+      monthlyActiveExamPlanCount: 0,
+    });
 
-    render(<DashboardPage />);
+    render(
+      <MemoryRouter>
+        <DashboardPage
+          token="token-123"
+          currentUser={{
+            userId: 1,
+            username: 'admin',
+            displayName: '系统管理员',
+            roles: ['SUPER_ADMIN'],
+            permissions: ['dashboard:view', 'dashboard:read'],
+            menus: [{ code: 'dashboard:view', name: '管理首页', path: '/dashboard' }],
+          }}
+        />
+      </MemoryRouter>,
+    );
 
     expect(screen.getByRole('heading', { name: '管理首页' })).toBeInTheDocument();
+    expect(await screen.findByText('本月新增考生')).toBeInTheDocument();
     expect(screen.queryByText('当前模块已经具备登录、鉴权、权限路由和基础日志链路能力，后续业务模块可以在这套基础之上继续扩展。')).not.toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '系统概览' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '登录与鉴权' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '个人信息' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: '常用功能' })).toBeInTheDocument();
   });
 
   it('renders standalone no-permission page component', async () => {

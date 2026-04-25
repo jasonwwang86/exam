@@ -1,5 +1,4 @@
-.topGrid,
-.chartGrid {
+.topGrid {
   display: grid;
   grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
   gap: 18px;
@@ -33,9 +32,13 @@
   font-weight: 600;
 }
 
+.loadingBlock {
+  padding: 8px 0;
+}
+
 .metricsGrid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
 }
 
@@ -45,7 +48,7 @@
   min-height: 124px;
   padding: 18px 16px;
   border: 1px solid var(--admin-border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: linear-gradient(180deg, #ffffff 0%, #fafcff 100%);
 }
 
@@ -65,26 +68,32 @@
 
 .quickActionGrid {
   display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
 }
 
 .quickActionCard {
   display: grid;
   justify-items: center;
-  gap: 12px;
+  gap: 8px;
   padding: 20px 12px;
   border: 1px solid var(--admin-border);
-  border-radius: 12px;
+  border-radius: 8px;
   background: var(--admin-panel);
+  text-decoration: none;
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.quickActionCard:hover {
+  border-color: rgba(47, 140, 255, 0.38);
+  transform: translateY(-1px);
 }
 
 .quickActionIcon {
   width: 42px;
   height: 42px;
   border-radius: 14px;
-  background:
-    linear-gradient(180deg, rgba(47, 140, 255, 0.16) 0%, rgba(47, 140, 255, 0.06) 100%);
+  background: linear-gradient(180deg, rgba(47, 140, 255, 0.16) 0%, rgba(47, 140, 255, 0.06) 100%);
   border: 1px solid rgba(47, 140, 255, 0.14);
 }
 
@@ -93,98 +102,22 @@
   text-align: center;
 }
 
-.chartPanel {
-  min-height: 292px;
-  padding: 10px 4px 0;
-}
-
-.chartBars {
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 10px;
-  align-items: end;
-  height: 100%;
-}
-
-.barGroup {
-  display: grid;
-  justify-items: center;
-  gap: 10px;
-  height: 100%;
-}
-
-.barTrack {
-  display: flex;
-  align-items: end;
-  width: 100%;
-  height: 230px;
-  padding: 6px;
-  border-radius: 10px 10px 4px 4px;
-  background:
-    linear-gradient(180deg, rgba(47, 140, 255, 0.04) 0%, rgba(47, 140, 255, 0.01) 100%);
-  border: 1px solid var(--admin-border);
-}
-
-.barFill,
-.barFillAlt {
-  display: block;
-  width: 100%;
-  border-radius: 8px 8px 4px 4px;
-}
-
-.barFill {
-  background: linear-gradient(180deg, #80bdff 0%, #2f8cff 100%);
-}
-
-.barFillAlt {
-  background: linear-gradient(180deg, #82d8b0 0%, #2fa36b 100%);
-}
-
-.barLabel {
+.quickActionHint {
   color: var(--admin-text-tertiary);
   font-size: 12px;
 }
 
-.capabilityGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.capabilityCard {
-  display: grid;
-  gap: 10px;
-  min-height: 164px;
-  padding: 18px;
-  border: 1px solid var(--admin-border);
-  border-radius: 12px;
-  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
-}
-
-.cardTitle {
-  margin: 0 !important;
-  color: var(--admin-text) !important;
-}
-
-.cardText {
-  margin: 0 !important;
-  color: var(--admin-text-secondary) !important;
-}
-
 @media (max-width: 1180px) {
   .metricsGrid,
-  .quickActionGrid,
-  .capabilityGrid {
+  .quickActionGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 900px) {
   .topGrid,
-  .chartGrid,
   .metricsGrid,
-  .quickActionGrid,
-  .capabilityGrid {
+  .quickActionGrid {
     grid-template-columns: 1fr;
   }
 }

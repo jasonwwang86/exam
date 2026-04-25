@@ -1,124 +1,127 @@
-import { Typography } from 'antd';
+import { Alert, Skeleton, Typography } from 'antd';
+import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import type { CurrentUser } from '../../auth/types';
+import { fetchDashboardSummary } from '../services/dashboardApi';
+import type { DashboardSummary } from '../types';
 import { AdminPage, AdminPageHeader, AdminPageSection } from '../../../shared/components/admin-page/AdminPage';
 import styles from './DashboardPage.module.css';
 
-const overviewMetrics = [
-  { label: '考试人数', value: '514', detail: '年：514 / 总：514' },
-  { label: '及格人数', value: '514', detail: '年：514 / 总：514' },
-  { label: '不及格人数', value: '0', detail: '年：0 / 总：0' },
-  { label: '及格率', value: '100%', detail: '年：100% / 总：100%' },
+type DashboardPageProps = {
+  token: string;
+  currentUser: CurrentUser;
+};
+
+const metricDefinitions: Array<{
+  key: keyof DashboardSummary;
+  label: string;
+  detail: string;
+}> = [
+  { key: 'monthlyNewExamineeCount', label: '本月新增考生', detail: '按考生创建时间统计' },
+  { key: 'monthlyNewQuestionCount', label: '本月新增题目', detail: '按题目录入时间统计' },
+  { key: 'monthlyNewPaperCount', label: '本月新增试卷', detail: '按试卷创建时间统计' },
+  { key: 'monthlyActiveExamPlanCount', label: '本月开考计划', detail: '按考试开始时间统计' },
 ];
 
-const quickActions = ['考生管理', '准考证', '考试计划', '考试记录', '试卷管理', '题目管理', '员工管理'];
+export function DashboardPage({ token, currentUser }: DashboardPageProps) {
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState('');
 
-const capabilityCards = [
-  {
-    title: '登录与鉴权',
-    text: '已支持管理员登录、会话恢复、退出登录以及未登录路由保护。',
-  },
-  {
-    title: '角色与权限',
-    text: '基础菜单权限和接口权限已打通，可继续承接后续模块的授权控制。',
-  },
-  {
-    title: '考生管理',
-    text: '统一主页面已预留业务模块入口，考生管理模块可在该框架下接入查询、维护与批量处理流程。',
-  },
-];
+  useEffect(() => {
+    let active = true;
 
-const monthlyTrend = [12, 18, 22, 24, 28, 32, 40, 44, 46, 52, 58, 100];
-const yearlyTrend = [34, 46, 54, 60, 68, 72, 80, 84, 88, 92, 96, 100];
+    async function loadSummary() {
+      setLoading(true);
+      setErrorMessage('');
 
-export function DashboardPage() {
+      try {
+        const response = await fetchDashboardSummary(token);
+        if (!active) {
+          return;
+        }
+        setSummary(response);
+      } catch (error) {
+        if (!active) {
+          return;
+        }
+        setSummary(null);
+        setErrorMessage('本月数据加载失败，请稍后重试');
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void loadSummary();
+
+    return () => {
+      active = false;
+    };
+  }, [token]);
+
+  const rolesText = useMemo(() => {
+    return currentUser.roles.length ? currentUser.roles.join('、') : '未分配角色';
+  }, [currentUser.roles]);
+
   return (
     <AdminPage>
-      <AdminPageHeader title="管理首页" description="查看考试业务概览、常用功能入口和近期趋势，作为统一工作台的默认落点。" />
+      <AdminPageHeader title="管理首页" description="查看当前登录账号信息、本月关键数据和可直接进入的常用功能。" />
 
       <div className={styles.topGrid}>
         <AdminPageSection title="个人信息" description="当前登录账号的基础摘要">
           <div className={styles.profilePanel}>
             <div className={styles.profileRow}>
               <span className={styles.profileLabel}>姓名</span>
-              <span className={styles.profileValue}>admin</span>
+              <span className={styles.profileValue}>{currentUser.displayName}</span>
             </div>
             <div className={styles.profileRow}>
-              <span className={styles.profileLabel}>部门</span>
-              <span className={styles.profileValue}>总经办</span>
+              <span className={styles.profileLabel}>账号</span>
+              <span className={styles.profileValue}>{currentUser.username}</span>
             </div>
             <div className={styles.profileRow}>
-              <span className={styles.profileLabel}>岗位</span>
-              <span className={styles.profileValue}>技术支持</span>
+              <span className={styles.profileLabel}>角色</span>
+              <span className={styles.profileValue}>{rolesText}</span>
+            </div>
+            <div className={styles.profileRow}>
+              <span className={styles.profileLabel}>模块数</span>
+              <span className={styles.profileValue}>{currentUser.menus.length}</span>
             </div>
           </div>
         </AdminPageSection>
 
-        <AdminPageSection title="本月数据" description="当前考试业务核心概览">
-          <div className={styles.metricsGrid}>
-            {overviewMetrics.map((metric) => (
-              <article key={metric.label} className={styles.metricCard}>
-                <Typography.Text className={styles.metricLabel}>{metric.label}</Typography.Text>
-                <Typography.Title level={2} className={styles.metricValue}>
-                  {metric.value}
-                </Typography.Title>
-                <Typography.Text className={styles.metricDetail}>{metric.detail}</Typography.Text>
-              </article>
-            ))}
-          </div>
+        <AdminPageSection title="本月数据" description="基于当前系统已接入模块的真实月度统计">
+          {loading ? (
+            <div className={styles.loadingBlock}>
+              <Skeleton active paragraph={{ rows: 4 }} />
+            </div>
+          ) : errorMessage ? (
+            <Alert showIcon type="error" role="alert" message={errorMessage} />
+          ) : summary ? (
+            <div className={styles.metricsGrid}>
+              {metricDefinitions.map((metric) => (
+                <article key={metric.key} className={styles.metricCard}>
+                  <Typography.Text className={styles.metricLabel}>{metric.label}</Typography.Text>
+                  <Typography.Title level={2} className={styles.metricValue}>
+                    {summary[metric.key]}
+                  </Typography.Title>
+                  <Typography.Text className={styles.metricDetail}>{metric.detail}</Typography.Text>
+                </article>
+              ))}
+            </div>
+          ) : null}
         </AdminPageSection>
       </div>
 
-      <AdminPageSection title="常用功能" description="高频入口统一放在工作台，便于快速进入考试业务流程">
+      <AdminPageSection title="常用功能" description="当前账号已经开通且可直接进入的管理模块">
         <div className={styles.quickActionGrid}>
-          {quickActions.map((item) => (
-            <div key={item} className={styles.quickActionCard}>
+          {currentUser.menus.map((menu) => (
+            <Link key={menu.path} className={styles.quickActionCard} to={menu.path}>
               <span className={styles.quickActionIcon} aria-hidden="true" />
-              <Typography.Text className={styles.quickActionLabel}>{item}</Typography.Text>
-            </div>
-          ))}
-        </div>
-      </AdminPageSection>
-
-      <div className={styles.chartGrid}>
-        <AdminPageSection title="考试趋势图（月）" description="查看月度考试人数与通过趋势">
-          <div className={styles.chartPanel}>
-            <div className={styles.chartBars}>
-              {monthlyTrend.map((value, index) => (
-                <div key={`month-${index + 1}`} className={styles.barGroup}>
-                  <span className={styles.barTrack}>
-                    <span className={styles.barFill} style={{ height: `${value}%` }} />
-                  </span>
-                  <span className={styles.barLabel}>{index + 1}月</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </AdminPageSection>
-
-        <AdminPageSection title="考试趋势图（年）" description="查看年度通过率与人数变化">
-          <div className={styles.chartPanel}>
-            <div className={styles.chartBars}>
-              {yearlyTrend.map((value, index) => (
-                <div key={`year-${index + 1}`} className={styles.barGroup}>
-                  <span className={styles.barTrack}>
-                    <span className={styles.barFillAlt} style={{ height: `${value}%` }} />
-                  </span>
-                  <span className={styles.barLabel}>{index + 1}月</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </AdminPageSection>
-      </div>
-
-      <AdminPageSection title="系统概览" description="当前管理端已具备的通用能力">
-        <div className={styles.capabilityGrid}>
-          {capabilityCards.map((item) => (
-            <article key={item.title} className={styles.capabilityCard}>
-              <Typography.Title level={5} className={styles.cardTitle}>
-                {item.title}
-              </Typography.Title>
-              <Typography.Paragraph className={styles.cardText}>{item.text}</Typography.Paragraph>
-            </article>
+              <Typography.Text className={styles.quickActionLabel}>{menu.name}</Typography.Text>
+              <Typography.Text className={styles.quickActionHint}>{menu.path}</Typography.Text>
+            </Link>
           ))}
         </div>
       </AdminPageSection>

@@ -80,7 +80,7 @@ class AdminAuthInterceptorTest {
     }
 
     private HandlerMethod dashboardHandler() throws NoSuchMethodException {
-        return new HandlerMethod(new AdminDashboardController(),
+        return new HandlerMethod(new AdminDashboardController(null),
                 AdminDashboardController.class.getMethod("summary"));
     }
 
