@@ -5,6 +5,7 @@ import cn.jack.exam.dto.candidate.CandidateLoginRequest;
 import cn.jack.exam.exception.UnauthorizedException;
 import cn.jack.exam.service.candidate.CandidateAuthService;
 import cn.jack.exam.service.candidate.CandidateAnsweringService;
+import cn.jack.exam.service.candidate.CandidateScoreReportService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -69,7 +70,7 @@ class CandidateAuthInterceptorTest {
     }
 
     private HandlerMethod profileHandler() throws NoSuchMethodException {
-        return new HandlerMethod(new CandidatePortalController((CandidateAuthService) null, (CandidateAnsweringService) null),
+        return new HandlerMethod(new CandidatePortalController((CandidateAuthService) null, (CandidateAnsweringService) null, (CandidateScoreReportService) null),
                 CandidatePortalController.class.getMethod("profile"));
     }
 

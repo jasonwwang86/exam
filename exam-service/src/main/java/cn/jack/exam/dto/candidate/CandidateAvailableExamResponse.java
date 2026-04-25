@@ -2,6 +2,7 @@ package cn.jack.exam.dto.candidate;
 
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
@@ -20,4 +21,8 @@ public class CandidateAvailableExamResponse {
     private Long remainingSeconds;
     private LocalDateTime submittedAt;
     private String submissionMethod;
+    private String scoreStatus;
+    private Boolean reportAvailable;
+    private BigDecimal totalScore;
+    private LocalDateTime resultGeneratedAt;
 }

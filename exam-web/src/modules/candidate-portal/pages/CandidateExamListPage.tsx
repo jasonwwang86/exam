@@ -8,6 +8,7 @@ type CandidateExamListPageProps = {
   errorMessage: string;
   onRefresh: () => void;
   onEnterAnswering: (planId: number) => void;
+  onViewScoreReport: (planId: number) => void;
   onLogout: () => void;
 };
 
@@ -34,7 +35,17 @@ function resolveAnsweringStatusText(exam: CandidateExam) {
   return '未进入答题';
 }
 
-export function CandidateExamListPage({ exams, submitting, errorMessage, onRefresh, onEnterAnswering, onLogout }: CandidateExamListPageProps) {
+function resolveScoreStatusText(exam: CandidateExam) {
+  if (exam.scoreStatus === 'PUBLISHED') {
+    return '已出分';
+  }
+  if (exam.answeringStatus === 'SUBMITTED' || exam.answeringStatus === 'AUTO_SUBMITTED') {
+    return '待出分';
+  }
+  return null;
+}
+
+export function CandidateExamListPage({ exams, submitting, errorMessage, onRefresh, onEnterAnswering, onViewScoreReport, onLogout }: CandidateExamListPageProps) {
   return (
     <main className={styles.page}>
       <section className={styles.shell}>
@@ -43,7 +54,7 @@ export function CandidateExamListPage({ exams, submitting, errorMessage, onRefre
           <Typography.Title level={1} className={styles.title}>
             可参加考试
           </Typography.Title>
-          <Typography.Paragraph className={styles.description}>当前页面支持进入在线答题并展示答题进度摘要，仍不扩展到交卷、成绩单或监考能力。</Typography.Paragraph>
+          <Typography.Paragraph className={styles.description}>当前页面支持进入在线答题、展示交卷状态，并在成绩生成后查看成绩详情；仍不扩展到动态大屏、考试计划或监考能力。</Typography.Paragraph>
           <div className={styles.actions}>
             <Button size="large" onClick={onLogout}>
               退出登录
@@ -74,12 +85,18 @@ export function CandidateExamListPage({ exams, submitting, errorMessage, onRefre
                       {exam.startTime} 至 {exam.endTime}
                     </span>
                     {exam.submittedAt ? <span>{`提交时间 ${exam.submittedAt}`}</span> : null}
+                    {exam.totalScore != null ? <span>{`总分 ${exam.totalScore}`}</span> : null}
+                    {resolveScoreStatusText(exam) ? <span>{resolveScoreStatusText(exam)}</span> : null}
                     {exam.remark ? <span>{exam.remark}</span> : null}
                   </div>
                   <div className={styles.itemActions}>
                     {exam.canEnterAnswering ? (
                       <Button type="primary" onClick={() => onEnterAnswering(exam.planId)}>
                         进入答题
+                      </Button>
+                    ) : exam.reportAvailable ? (
+                      <Button type="primary" onClick={() => onViewScoreReport(exam.planId)}>
+                        查看成绩
                       </Button>
                     ) : (
                       <span className={styles.readonlyHint}>当前不可进入答题</span>

@@ -8,10 +8,12 @@ import cn.jack.exam.dto.candidate.CandidateExamSubmissionResponse;
 import cn.jack.exam.dto.candidate.CandidateLoginRequest;
 import cn.jack.exam.dto.candidate.CandidateLoginResponse;
 import cn.jack.exam.dto.candidate.CandidateProfileResponse;
+import cn.jack.exam.dto.candidate.CandidateScoreReportResponse;
 import cn.jack.exam.dto.candidate.CandidateSaveAnswerRequest;
 import cn.jack.exam.dto.candidate.CandidateSaveAnswerResponse;
 import cn.jack.exam.service.candidate.CandidateAuthService;
 import cn.jack.exam.service.candidate.CandidateAnsweringService;
+import cn.jack.exam.service.candidate.CandidateScoreReportService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -31,6 +33,7 @@ public class CandidatePortalController {
 
     private final CandidateAuthService candidateAuthService;
     private final CandidateAnsweringService candidateAnsweringService;
+    private final CandidateScoreReportService candidateScoreReportService;
 
     @PostMapping("/auth/login")
     public CandidateLoginResponse login(@Valid @RequestBody CandidateLoginRequest request) {
@@ -50,6 +53,11 @@ public class CandidatePortalController {
     @GetMapping("/exams")
     public List<CandidateAvailableExamResponse> listAvailableExams() {
         return candidateAuthService.listAvailableExams(CandidateUserContextHolder.getRequired());
+    }
+
+    @GetMapping("/exams/{planId}/score-report")
+    public CandidateScoreReportResponse getScoreReport(@PathVariable Long planId) {
+        return candidateScoreReportService.getScoreReport(planId, CandidateUserContextHolder.getRequired());
     }
 
     @PutMapping("/exams/{planId}/answer-session")

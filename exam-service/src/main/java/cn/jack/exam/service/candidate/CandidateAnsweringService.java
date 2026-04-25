@@ -56,6 +56,7 @@ public class CandidateAnsweringService {
     private final PaperQuestionMapper paperQuestionMapper;
     private final ExamAnswerSessionMapper examAnswerSessionMapper;
     private final ExamAnswerRecordMapper examAnswerRecordMapper;
+    private final CandidateScoreGenerationService candidateScoreGenerationService;
     private final ObjectMapper objectMapper;
 
     public CandidateAnswerSessionResponse loadAnswerSession(Long planId, CandidateUserContext context) {
@@ -383,7 +384,21 @@ public class CandidateAnsweringService {
         session.setSubmittedAt(now);
         session.setUpdatedAt(now);
         examAnswerSessionMapper.updateById(session);
+        triggerScoreGeneration(session);
         return session;
+    }
+
+    private void triggerScoreGeneration(ExamAnswerSession session) {
+        try {
+            candidateScoreGenerationService.generateForSession(session);
+        } catch (RuntimeException exception) {
+            log.warn("traceNo={} event=candidate_score_generation_deferred candidateId={} planId={} sessionId={} message={}",
+                    TraceContext.getTraceNo(),
+                    session.getExamineeId(),
+                    session.getExamPlanId(),
+                    session.getId(),
+                    exception.getMessage());
+        }
     }
 
     private long remainingSeconds(LocalDateTime deadlineAt, LocalDateTime now) {

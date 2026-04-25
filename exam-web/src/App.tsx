@@ -5,6 +5,7 @@ import type { CurrentUser, LoginFormState } from './modules/auth/types';
 import { LoginPage } from './modules/auth/pages/LoginPage';
 import {
   confirmCandidateProfile,
+  fetchCandidateScoreReport,
   fetchCandidateProfile,
   listCandidateExams,
   loadCandidateAnswerSession,
@@ -17,12 +18,14 @@ import { CandidateConfirmationPage } from './modules/candidate-portal/pages/Cand
 import { CandidateExamListPage } from './modules/candidate-portal/pages/CandidateExamListPage';
 import { CandidateLoadingPage } from './modules/candidate-portal/pages/CandidateLoadingPage';
 import { CandidateLoginPage } from './modules/candidate-portal/pages/CandidateLoginPage';
+import { CandidateScoreReportPage } from './modules/candidate-portal/pages/CandidateScoreReportPage';
 import type {
   CandidateAnswerSession,
   CandidateExam,
   CandidateExamSubmissionResult,
   CandidateLoginFormState,
   CandidateProfile,
+  CandidateScoreReport,
 } from './modules/candidate-portal/types';
 import { DashboardPage } from './modules/dashboard/pages/DashboardPage';
 import { ExamPlanManagementPage } from './modules/exam-plan-management/pages/ExamPlanManagementPage';
@@ -230,6 +233,7 @@ function CandidatePortalApp() {
   const [profile, setProfile] = useState<CandidateProfile | null>(null);
   const [exams, setExams] = useState<CandidateExam[]>([]);
   const [answerSession, setAnswerSession] = useState<CandidateAnswerSession | null>(null);
+  const [scoreReport, setScoreReport] = useState<CandidateScoreReport | null>(null);
   const [accessToken, setAccessToken] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -254,6 +258,7 @@ function CandidatePortalApp() {
     setProfile(null);
     setExams([]);
     setAnswerSession(null);
+    setScoreReport(null);
   }
 
   async function restoreCandidateSession(token: string) {
@@ -273,6 +278,7 @@ function CandidatePortalApp() {
       } else {
         setExams([]);
         setAnswerSession(null);
+        setScoreReport(null);
         window.localStorage.removeItem(CANDIDATE_EXAMS_STORAGE_KEY);
         navigate('/candidate/confirm', { replace: true });
       }
@@ -311,6 +317,7 @@ function CandidatePortalApp() {
       });
       setExams([]);
       setAnswerSession(null);
+      setScoreReport(null);
       window.localStorage.removeItem(CANDIDATE_EXAMS_STORAGE_KEY);
       navigate(response.profileConfirmed ? '/candidate/exams' : '/candidate/confirm', { replace: true });
     } catch (error) {
@@ -347,6 +354,7 @@ function CandidatePortalApp() {
       const candidateExams = await listCandidateExams(response.token);
       setExams(candidateExams);
       setAnswerSession(null);
+      setScoreReport(null);
       writeCandidateExamsCache(candidateExams);
       navigate('/candidate/exams', { replace: true });
     } catch (error) {
@@ -398,6 +406,7 @@ function CandidatePortalApp() {
     try {
       const session = await loadCandidateAnswerSession(accessToken, planId);
       setAnswerSession(session);
+      setScoreReport(null);
       navigate(`/candidate/exams/${planId}/answer`, { replace: false });
     } catch (error) {
       setAnswerSession(null);
@@ -422,6 +431,7 @@ function CandidatePortalApp() {
     try {
       const session = await loadCandidateAnswerSession(accessToken, planId);
       setAnswerSession(session);
+      setScoreReport(null);
     } catch (error) {
       setAnswerSession(null);
       setErrorMessage(extractErrorMessage(error, '进入答题失败，请稍后重试'));
@@ -458,15 +468,68 @@ function CandidatePortalApp() {
     try {
       const submission = await submitCandidateExam(accessToken, planId);
       setAnswerSession((current) => mergeSubmissionIntoSession(current, submission));
-      setExams((current) => {
-        const next = current.map((exam) => (exam.planId === planId ? mergeSubmissionIntoExam(exam, submission) : exam));
-        writeCandidateExamsCache(next);
-        return next;
-      });
+      setScoreReport(null);
+      try {
+        const candidateExams = await listCandidateExams(accessToken);
+        setExams(candidateExams);
+        writeCandidateExamsCache(candidateExams);
+      } catch {
+        setExams((current) => {
+          const next = current.map((exam) => (exam.planId === planId ? mergeSubmissionIntoExam(exam, submission) : exam));
+          writeCandidateExamsCache(next);
+          return next;
+        });
+      }
       return submission;
     } catch (error) {
       setErrorMessage(extractErrorMessage(error, '提交试卷失败，请稍后重试'));
       throw error;
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleViewScoreReport(planId: number) {
+    if (!accessToken || !profile?.profileConfirmed) {
+      navigate('/candidate/login', { replace: true });
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMessage('');
+    try {
+      const report = await fetchCandidateScoreReport(accessToken, planId);
+      setScoreReport(report);
+      setAnswerSession(null);
+      navigate(`/candidate/exams/${planId}/report`, { replace: false });
+    } catch (error) {
+      setScoreReport(null);
+      setErrorMessage(extractErrorMessage(error, '成绩详情加载失败，请稍后重试'));
+      navigate('/candidate/exams', { replace: true });
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  async function handleLoadScoreReport(planId: number) {
+    if (!accessToken || !profile?.profileConfirmed) {
+      navigate('/candidate/login', { replace: true });
+      return;
+    }
+    if (scoreReport?.planId === planId) {
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMessage('');
+    try {
+      const report = await fetchCandidateScoreReport(accessToken, planId);
+      setScoreReport(report);
+      setAnswerSession(null);
+    } catch (error) {
+      setScoreReport(null);
+      setErrorMessage(extractErrorMessage(error, '成绩详情加载失败，请稍后重试'));
+      navigate('/candidate/exams', { replace: true });
     } finally {
       setSubmitting(false);
     }
@@ -518,6 +581,7 @@ function CandidatePortalApp() {
               errorMessage={errorMessage}
               onRefresh={() => void handleRefreshCandidateExams()}
               onEnterAnswering={(planId) => void handleEnterAnswering(planId)}
+              onViewScoreReport={(planId) => void handleViewScoreReport(planId)}
               onLogout={handleCandidateLogout}
             />
           ) : (
@@ -536,7 +600,27 @@ function CandidatePortalApp() {
               errorMessage={errorMessage}
               onLoadAnswerSession={(planId) => void handleLoadAnsweringSession(planId)}
               onSaveAnswer={handleSaveAnswer}
-              onSubmitPaper={(planId) => void handleSubmitPaper(planId)}
+              onSubmitPaper={(planId) => handleSubmitPaper(planId)}
+              onBackToExamList={() => {
+                setErrorMessage('');
+                navigate('/candidate/exams', { replace: true });
+              }}
+              onLogout={handleCandidateLogout}
+            />
+          ) : (
+            <Navigate to="/candidate/confirm" replace />
+          )
+        }
+      />
+      <Route
+        path="/candidate/exams/:planId/report"
+        element={
+          profile.profileConfirmed ? (
+            <CandidateScoreReportRoute
+              accessToken={accessToken}
+              scoreReport={scoreReport}
+              errorMessage={errorMessage}
+              onLoadScoreReport={(planId) => void handleLoadScoreReport(planId)}
               onBackToExamList={() => {
                 setErrorMessage('');
                 navigate('/candidate/exams', { replace: true });
@@ -561,6 +645,15 @@ type CandidateAnsweringRouteProps = {
   onLoadAnswerSession: (planId: number) => void;
   onSaveAnswer: (planId: number, paperQuestionId: number, answerContent: Record<string, unknown> | null) => Promise<any>;
   onSubmitPaper: (planId: number) => Promise<any>;
+  onBackToExamList: () => void;
+  onLogout: () => void;
+};
+
+type CandidateScoreReportRouteProps = {
+  accessToken: string;
+  scoreReport: CandidateScoreReport | null;
+  errorMessage: string;
+  onLoadScoreReport: (planId: number) => void;
   onBackToExamList: () => void;
   onLogout: () => void;
 };
@@ -607,6 +700,37 @@ function CandidateAnsweringRoute({
       onLogout={onLogout}
     />
   );
+}
+
+function CandidateScoreReportRoute({
+  accessToken,
+  scoreReport,
+  errorMessage,
+  onLoadScoreReport,
+  onBackToExamList,
+  onLogout,
+}: CandidateScoreReportRouteProps) {
+  const params = useParams<{ planId: string }>();
+  const planId = Number(params.planId);
+
+  useEffect(() => {
+    if (!accessToken || !Number.isFinite(planId) || planId <= 0) {
+      return;
+    }
+    if (scoreReport?.planId !== planId) {
+      onLoadScoreReport(planId);
+    }
+  }, [accessToken, onLoadScoreReport, planId, scoreReport?.planId]);
+
+  if (!Number.isFinite(planId) || planId <= 0) {
+    return <Navigate to="/candidate/exams" replace />;
+  }
+
+  if (!scoreReport || scoreReport.planId !== planId) {
+    return <CandidateLoadingPage />;
+  }
+
+  return <CandidateScoreReportPage report={scoreReport} errorMessage={errorMessage} onBackToExamList={onBackToExamList} onLogout={onLogout} />;
 }
 
 function readCandidateProfileCache() {
@@ -675,6 +799,9 @@ function resolveCandidatePath(requestedPath: string, profileConfirmed: boolean) 
     return '/candidate/confirm';
   }
   if (/^\/candidate\/exams\/\d+\/answer$/.test(requestedPath)) {
+    return requestedPath;
+  }
+  if (/^\/candidate\/exams\/\d+\/report$/.test(requestedPath)) {
     return requestedPath;
   }
   if (requestedPath === '/candidate/exams') {

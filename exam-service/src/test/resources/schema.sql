@@ -2,6 +2,8 @@ drop table if exists admin_role_permission;
 drop table if exists admin_user_role;
 drop table if exists admin_session;
 drop table if exists exam_plan_examinee;
+drop table if exists exam_result_item;
+drop table if exists exam_result;
 drop table if exists exam_answer_record;
 drop table if exists exam_answer_session;
 drop table if exists exam_plan;
@@ -169,4 +171,42 @@ create table exam_answer_record (
     created_at timestamp not null,
     updated_at timestamp not null,
     unique (session_id, paper_question_id)
+);
+
+create table exam_result (
+    id bigint primary key auto_increment,
+    exam_plan_id bigint not null,
+    examinee_id bigint not null,
+    session_id bigint not null,
+    paper_id bigint not null,
+    score_status varchar(32) not null,
+    total_score decimal(8, 2) not null,
+    objective_score decimal(8, 2),
+    subjective_score decimal(8, 2),
+    answered_count int not null,
+    unanswered_count int not null,
+    submitted_at timestamp not null,
+    generated_at timestamp not null,
+    published_at timestamp,
+    created_at timestamp not null,
+    updated_at timestamp not null,
+    unique (exam_plan_id, examinee_id)
+);
+
+create table exam_result_item (
+    id bigint primary key auto_increment,
+    result_id bigint not null,
+    paper_question_id bigint not null,
+    question_id bigint not null,
+    question_no int not null,
+    question_stem_snapshot varchar(1000) not null,
+    question_type_name_snapshot varchar(64) not null,
+    item_score decimal(8, 2) not null,
+    awarded_score decimal(8, 2) not null,
+    answer_status varchar(32) not null,
+    answer_summary clob,
+    judge_status varchar(32) not null,
+    created_at timestamp not null,
+    updated_at timestamp not null,
+    unique (result_id, paper_question_id)
 );

@@ -12,6 +12,8 @@ class MySqlDatasourceConfigTest {
 
     private static final Path APPLICATION_CONFIG_PATH =
             Path.of("src", "main", "resources", "application.yml");
+    private static final Path MYSQL_SCHEMA_PATH =
+            Path.of("src", "main", "resources", "db", "mysql", "ddl", "schema.sql");
 
     @Test
     void shouldAllowPublicKeyRetrievalForMysqlDatasource() throws IOException {
@@ -19,5 +21,14 @@ class MySqlDatasourceConfigTest {
 
         assertThat(applicationConfig)
                 .contains("allowPublicKeyRetrieval=true");
+    }
+
+    @Test
+    void shouldStoreExamResultAnswerSummaryAsTextInMysqlSchema() throws IOException {
+        String mysqlSchema = Files.readString(MYSQL_SCHEMA_PATH);
+
+        assertThat(mysqlSchema)
+                .contains("answer_summary text null")
+                .doesNotContain("answer_summary json null");
     }
 }

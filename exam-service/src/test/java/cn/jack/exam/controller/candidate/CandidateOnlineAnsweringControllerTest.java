@@ -238,6 +238,64 @@ class CandidateOnlineAnsweringControllerTest {
     }
 
     @Test
+    void shouldExposeScoreSummaryAndScoreReportAfterSubmission() throws Exception {
+        Long planId = insertExamPlanForExaminee(
+                109L,
+                "交卷后可查看成绩场次",
+                LocalDateTime.now().minusMinutes(30),
+                LocalDateTime.now().plusMinutes(40),
+                1L);
+        String candidateToken = confirmCandidateAndExtractToken("EX2026001", "110101199001010011");
+
+        mockMvc.perform(put("/api/candidate/exams/{planId}/answer-session", planId)
+                        .header("Authorization", "Bearer " + candidateToken))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/candidate/exams/{planId}/questions/{paperQuestionId}/answer", planId, 1L)
+                        .header("Authorization", "Bearer " + candidateToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "answerContent": {
+                                    "selectedOption": "A"
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(put("/api/candidate/exams/{planId}/questions/{paperQuestionId}/answer", planId, 2L)
+                        .header("Authorization", "Bearer " + candidateToken)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "answerContent": {
+                                    "textAnswer": "Java Virtual Machine"
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/candidate/exams/{planId}/submission", planId)
+                        .header("Authorization", "Bearer " + candidateToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.sessionStatus").value("SUBMITTED"));
+
+        mockMvc.perform(get("/api/candidate/exams")
+                        .header("Authorization", "Bearer " + candidateToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.planId == 109)].scoreStatus").value("PUBLISHED"))
+                .andExpect(jsonPath("$[?(@.planId == 109)].reportAvailable").value(true))
+                .andExpect(jsonPath("$[?(@.planId == 109)].totalScore").value(11.0));
+
+        mockMvc.perform(get("/api/candidate/exams/{planId}/score-report", planId)
+                        .header("Authorization", "Bearer " + candidateToken))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.scoreStatus").value("PUBLISHED"))
+                .andExpect(jsonPath("$.totalScore").value(11.0))
+                .andExpect(jsonPath("$.items", hasSize(2)));
+    }
+
+    @Test
     void shouldAutoSubmitExpiredSessionWhenReloadingAnswerSession() throws Exception {
         Long planId = insertExamPlanForExaminee(
                 106L,

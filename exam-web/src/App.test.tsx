@@ -1024,4 +1024,287 @@ describe('App', () => {
       }),
     );
   });
+
+  it('refreshes candidate exam list after submission so generated score summary becomes visible', async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem('candidate_token', 'candidate-token-submit-refresh');
+    window.localStorage.setItem(
+      'candidate_profile',
+      JSON.stringify({
+        examineeId: 1,
+        examineeNo: 'EX2026001',
+        name: '张三',
+        maskedIdCardNo: '110101********0011',
+        profileConfirmed: true,
+        message: '身份信息已确认，可查看可参加考试',
+      }),
+    );
+    window.localStorage.setItem(
+      'candidate_exams',
+      JSON.stringify([
+        {
+          planId: 1,
+          name: 'Java 在线答题场次',
+          paperName: 'Java 基础试卷',
+          durationMinutes: 120,
+          startTime: '2026-05-01T09:00:00',
+          endTime: '2026-05-01T12:00:00',
+          displayStatus: '进行中',
+          remark: '可作答',
+          canEnterAnswering: true,
+          answeringStatus: 'IN_PROGRESS',
+          remainingSeconds: 2400,
+        },
+      ]),
+    );
+    window.history.pushState({}, '', '/candidate/exams');
+    mockPut.mockResolvedValueOnce({
+      data: {
+        planId: 1,
+        name: 'Java 在线答题场次',
+        paperName: 'Java 基础试卷',
+        durationMinutes: 120,
+        sessionStatus: 'IN_PROGRESS',
+        startedAt: '2026-05-01T09:10:00',
+        deadlineAt: '2099-05-01T10:00:00',
+        remainingSeconds: 2400,
+        answeredCount: 2,
+        totalQuestionCount: 2,
+        questions: [
+          {
+            paperQuestionId: 1,
+            questionId: 1,
+            questionNo: 1,
+            stem: 'Java 的入口方法是什么？',
+            questionTypeName: '单选题',
+            answerMode: 'SINGLE_CHOICE',
+            answerConfig: {
+              options: [
+                { key: 'A', content: 'main' },
+                { key: 'B', content: 'run' },
+              ],
+            },
+            savedAnswer: {
+              selectedOption: 'A',
+            },
+            answerStatus: 'ANSWERED',
+          },
+          {
+            paperQuestionId: 2,
+            questionId: 2,
+            questionNo: 2,
+            stem: '请写出 JVM 的英文全称。',
+            questionTypeName: '简答题',
+            answerMode: 'TEXT',
+            answerConfig: {},
+            savedAnswer: {
+              textAnswer: 'Java Virtual Machine',
+            },
+            answerStatus: 'ANSWERED',
+          },
+        ],
+      },
+    });
+    mockPost.mockResolvedValueOnce({
+      data: {
+        planId: 1,
+        name: 'Java 在线答题场次',
+        paperName: 'Java 基础试卷',
+        sessionStatus: 'SUBMITTED',
+        submissionMethod: 'MANUAL',
+        submittedAt: '2026-05-01T09:40:00',
+        answeredCount: 2,
+        totalQuestionCount: 2,
+      },
+    });
+    mockGet.mockResolvedValueOnce({
+      data: [
+        {
+          planId: 1,
+          name: 'Java 在线答题场次',
+          paperName: 'Java 基础试卷',
+          durationMinutes: 120,
+          startTime: '2026-05-01T09:00:00',
+          endTime: '2026-05-01T12:00:00',
+          displayStatus: '已结束',
+          remark: '可查看成绩',
+          canEnterAnswering: false,
+          answeringStatus: 'SUBMITTED',
+          remainingSeconds: 0,
+          submittedAt: '2026-05-01T09:40:00',
+          submissionMethod: 'MANUAL',
+          scoreStatus: 'PUBLISHED',
+          reportAvailable: true,
+          totalScore: 11,
+          resultGeneratedAt: '2026-05-01T09:40:05',
+        },
+      ],
+    });
+
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: '进入答题' }));
+    expect(await screen.findByRole('heading', { name: 'Java 在线答题场次' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '提交试卷' }));
+    await user.click(screen.getByRole('button', { name: '确认提交' }));
+
+    expect(await screen.findByText('试卷已提交')).toBeInTheDocument();
+
+    await user.click(screen.getAllByRole('button', { name: '返回考试列表' })[0]);
+
+    expect(await screen.findByRole('heading', { name: '可参加考试' })).toBeInTheDocument();
+    expect(await screen.findByText('总分 11')).toBeInTheDocument();
+    expect(screen.getByText('已出分')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '查看成绩' })).toBeInTheDocument();
+    expect(mockGet).toHaveBeenCalledWith(
+      '/api/candidate/exams',
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: 'Bearer candidate-token-submit-refresh',
+        }),
+      }),
+    );
+    expect(window.localStorage.getItem('candidate_exams')).toContain('"scoreStatus":"PUBLISHED"');
+  });
+
+  it('opens score report from candidate exam list and renders score details', async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem('candidate_token', 'candidate-token-report');
+    window.localStorage.setItem(
+      'candidate_profile',
+      JSON.stringify({
+        examineeId: 1,
+        examineeNo: 'EX2026001',
+        name: '张三',
+        maskedIdCardNo: '110101********0011',
+        profileConfirmed: true,
+        message: '身份信息已确认，可查看可参加考试',
+      }),
+    );
+    window.localStorage.setItem(
+      'candidate_exams',
+      JSON.stringify([
+        {
+          planId: 1,
+          name: 'Java 成绩单场次',
+          paperName: 'Java 基础试卷',
+          durationMinutes: 120,
+          startTime: '2026-05-01T09:00:00',
+          endTime: '2026-05-01T12:00:00',
+          displayStatus: '已结束',
+          remark: '可查看成绩',
+          canEnterAnswering: false,
+          answeringStatus: 'SUBMITTED',
+          remainingSeconds: 0,
+          submittedAt: '2026-05-01T09:40:00',
+          submissionMethod: 'MANUAL',
+          scoreStatus: 'PUBLISHED',
+          reportAvailable: true,
+          totalScore: 92.5,
+          resultGeneratedAt: '2026-05-01T10:00:00',
+        },
+      ]),
+    );
+    window.history.pushState({}, '', '/candidate/exams');
+    mockGet.mockResolvedValueOnce({
+      data: {
+        planId: 1,
+        name: 'Java 成绩单场次',
+        paperName: 'Java 基础试卷',
+        durationMinutes: 120,
+        remark: '可查看成绩',
+        scoreStatus: 'PUBLISHED',
+        totalScore: 92.5,
+        objectiveScore: 86.5,
+        subjectiveScore: 6,
+        answeredCount: 2,
+        unansweredCount: 0,
+        submittedAt: '2026-05-01T09:40:00',
+        generatedAt: '2026-05-01T10:00:00',
+        publishedAt: '2026-05-01T10:01:00',
+        submissionMethod: 'MANUAL',
+        items: [
+          {
+            paperQuestionId: 1,
+            questionId: 1,
+            questionNo: 1,
+            questionStem: 'Java 的入口方法是什么？',
+            questionTypeName: '单选题',
+            itemScore: 5,
+            awardedScore: 5,
+            answerStatus: 'ANSWERED',
+            answerSummary: '选择 A',
+            judgeStatus: 'CORRECT',
+          },
+        ],
+      },
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '可参加考试' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '查看成绩' }));
+
+    expect(await screen.findByRole('heading', { name: '成绩详情' })).toBeInTheDocument();
+    expect(screen.getByText('Java 成绩单场次')).toBeInTheDocument();
+    expect(screen.getByText('总分 92.5')).toBeInTheDocument();
+    expect(screen.getByText('Java 的入口方法是什么？')).toBeInTheDocument();
+  });
+
+  it('returns to candidate exam list and shows error when score report loading fails', async () => {
+    const user = userEvent.setup();
+    window.localStorage.setItem('candidate_token', 'candidate-token-report-error');
+    window.localStorage.setItem(
+      'candidate_profile',
+      JSON.stringify({
+        examineeId: 1,
+        examineeNo: 'EX2026001',
+        name: '张三',
+        maskedIdCardNo: '110101********0011',
+        profileConfirmed: true,
+        message: '身份信息已确认，可查看可参加考试',
+      }),
+    );
+    window.localStorage.setItem(
+      'candidate_exams',
+      JSON.stringify([
+        {
+          planId: 1,
+          name: 'Java 成绩单场次',
+          paperName: 'Java 基础试卷',
+          durationMinutes: 120,
+          startTime: '2026-05-01T09:00:00',
+          endTime: '2026-05-01T12:00:00',
+          displayStatus: '已结束',
+          remark: '可查看成绩',
+          canEnterAnswering: false,
+          answeringStatus: 'SUBMITTED',
+          remainingSeconds: 0,
+          submittedAt: '2026-05-01T09:40:00',
+          submissionMethod: 'MANUAL',
+          scoreStatus: 'PUBLISHED',
+          reportAvailable: true,
+          totalScore: 92.5,
+          resultGeneratedAt: '2026-05-01T10:00:00',
+        },
+      ]),
+    );
+    window.history.pushState({}, '', '/candidate/exams');
+    mockGet.mockRejectedValueOnce({
+      response: {
+        data: {
+          message: '成绩详情加载失败',
+        },
+      },
+    });
+
+    render(<App />);
+
+    expect(await screen.findByRole('heading', { name: '可参加考试' })).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '查看成绩' }));
+
+    expect(await screen.findByRole('heading', { name: '可参加考试' })).toBeInTheDocument();
+    expect(screen.getByRole('alert')).toHaveTextContent('成绩详情加载失败');
+  });
 });

@@ -29,6 +29,10 @@ export type CandidateExam = {
   remainingSeconds: number | null;
   submittedAt?: string;
   submissionMethod?: string;
+  scoreStatus?: string | null;
+  reportAvailable?: boolean;
+  totalScore?: number | null;
+  resultGeneratedAt?: string | null;
 };
 
 export type CandidateQuestionOption = {
@@ -85,4 +89,42 @@ export type CandidateExamSubmissionResult = {
   submittedAt: string;
   answeredCount: number;
   totalQuestionCount: number;
+};
+
+export type CandidateScoreReportItem = {
+  paperQuestionId: number;
+  questionId: number;
+  questionNo: number;
+  questionStem: string;
+  questionTypeName: string;
+  answerMode: string;
+  answerConfig: {
+    options?: CandidateQuestionOption[];
+    [key: string]: unknown;
+  };
+  itemScore: number;
+  awardedScore: number;
+  answerStatus: string;
+  answerSummary: string | null;
+  savedAnswer: Record<string, unknown> | null;
+  judgeStatus: string;
+};
+
+export type CandidateScoreReport = {
+  planId: number;
+  name: string;
+  paperName: string;
+  durationMinutes: number;
+  remark: string | null;
+  scoreStatus: string;
+  totalScore: number;
+  objectiveScore?: number | null;
+  subjectiveScore?: number | null;
+  answeredCount: number;
+  unansweredCount: number;
+  submittedAt: string;
+  generatedAt: string;
+  publishedAt?: string | null;
+  submissionMethod: string;
+  items: CandidateScoreReportItem[];
 };

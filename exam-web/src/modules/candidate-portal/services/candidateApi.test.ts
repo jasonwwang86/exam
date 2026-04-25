@@ -233,4 +233,30 @@ describe('candidateApi TraceNo headers', () => {
       },
     );
   });
+
+  it('sends Authorization and TraceNo headers when querying candidate score report', async () => {
+    mockGet.mockResolvedValue({
+      data: {
+        planId: 1,
+        name: 'Java 成绩单场次',
+        paperName: 'Java 基础试卷',
+        scoreStatus: 'PUBLISHED',
+        totalScore: 92.5,
+        answeredCount: 2,
+        unansweredCount: 0,
+        items: [],
+      },
+    });
+
+    const api = await import('./candidateApi');
+
+    await (api as any).fetchCandidateScoreReport('candidate-token-2', 1);
+
+    expect(mockGet).toHaveBeenCalledWith('/api/candidate/exams/1/score-report', {
+      headers: {
+        Authorization: 'Bearer candidate-token-2',
+        TraceNo: '123e4567e89b12d3a456426614174000',
+      },
+    });
+  });
 });

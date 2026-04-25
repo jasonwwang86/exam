@@ -9,10 +9,12 @@ import cn.jack.exam.dto.candidate.CandidateLoginResponse;
 import cn.jack.exam.dto.candidate.CandidateProfileResponse;
 import cn.jack.exam.dto.candidate.CandidateProfileSummaryResponse;
 import cn.jack.exam.entity.Examinee;
+import cn.jack.exam.entity.ExamResult;
 import cn.jack.exam.exception.ForbiddenException;
 import cn.jack.exam.exception.UnauthorizedException;
 import cn.jack.exam.mapper.ExamAnswerSessionMapper;
 import cn.jack.exam.mapper.ExamPlanMapper;
+import cn.jack.exam.mapper.ExamResultMapper;
 import cn.jack.exam.mapper.ExamineeMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,7 @@ public class CandidateAuthService {
     private final ExamineeMapper examineeMapper;
     private final ExamPlanMapper examPlanMapper;
     private final ExamAnswerSessionMapper examAnswerSessionMapper;
+    private final ExamResultMapper examResultMapper;
     private final CandidateTokenService candidateTokenService;
     private final CandidateAnsweringService candidateAnsweringService;
 
@@ -157,6 +160,7 @@ public class CandidateAuthService {
             exam.setAnsweringStatus("NOT_STARTED");
             exam.setRemainingSeconds(null);
             exam.setCanEnterAnswering(!now.isBefore(exam.getStartTime()) && now.isBefore(exam.getEndTime()));
+            applyScoreSummary(exam, examineeId);
             return;
         }
 
@@ -167,6 +171,7 @@ public class CandidateAuthService {
             exam.setCanEnterAnswering(false);
             exam.setSubmittedAt(session.getSubmittedAt());
             exam.setSubmissionMethod(candidateAnsweringService.resolveSubmissionMethod(session.getStatus()));
+            applyScoreSummary(exam, examineeId);
             return;
         }
 
@@ -175,5 +180,25 @@ public class CandidateAuthService {
         exam.setAnsweringStatus(timeExpired ? "TIME_EXPIRED" : session.getStatus());
         exam.setRemainingSeconds(remainingSeconds);
         exam.setCanEnterAnswering(!timeExpired && now.isBefore(exam.getEndTime()));
+        applyScoreSummary(exam, examineeId);
+    }
+
+    private void applyScoreSummary(CandidateAvailableExamResponse exam, Long examineeId) {
+        ExamResult result = examResultMapper.selectOne(new LambdaQueryWrapper<ExamResult>()
+                .eq(ExamResult::getExamPlanId, exam.getPlanId())
+                .eq(ExamResult::getExamineeId, examineeId)
+                .last("limit 1"));
+        if (result == null) {
+            exam.setScoreStatus(null);
+            exam.setReportAvailable(false);
+            exam.setTotalScore(null);
+            exam.setResultGeneratedAt(null);
+            return;
+        }
+
+        exam.setScoreStatus(result.getScoreStatus());
+        exam.setReportAvailable(true);
+        exam.setTotalScore(result.getTotalScore());
+        exam.setResultGeneratedAt(result.getGeneratedAt());
     }
 }

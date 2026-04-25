@@ -27,6 +27,8 @@ public final class LogSanitizer {
                 .replaceAll("(?i)\"phone\"\\s*:\\s*\"[^\"]*\"", "\"phone\":\"" + REDACTED + "\"")
                 .replaceAll("(?is)\"answerContent\"\\s*:\\s*\\{.*?\\}", "\"answerContent\":\"" + REDACTED + "\"")
                 .replaceAll("(?is)\"savedAnswer\"\\s*:\\s*\\{.*?\\}", "\"savedAnswer\":\"" + REDACTED + "\"")
+                .replaceAll("(?i)\"textAnswer\"\\s*:\\s*\"[^\"]*\"", "\"textAnswer\":\"" + REDACTED + "\"")
+                .replaceAll("(?i)\"answerSummary\"\\s*:\\s*\"[^\"]*\"", "\"answerSummary\":\"" + REDACTED + "\"")
                 .replaceAll("(?i)\"selectedOption\"\\s*:\\s*\"[^\"]*\"", "\"selectedOption\":\"" + REDACTED + "\"")
                 .replaceAll("(?is)\"selectedOptions\"\\s*:\\s*\\[[^\\]]*\\]", "\"selectedOptions\":\"" + REDACTED + "\"")
                 .replaceAll("(?i)\"questionStemSnapshot\"\\s*:\\s*\"[^\"]*\"", "\"questionStemSnapshot\":\"" + REDACTED + "\"")

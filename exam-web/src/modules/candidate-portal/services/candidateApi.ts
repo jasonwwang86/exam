@@ -6,6 +6,7 @@ import type {
   CandidateExamSubmissionResult,
   CandidateProfile,
   CandidateProfileSummary,
+  CandidateScoreReport,
   CandidateSaveAnswerResult,
 } from '../types';
 
@@ -95,6 +96,16 @@ export async function submitCandidateExam(token: string, planId: number) {
   const response = await client.post<CandidateExamSubmissionResult>(
     `/api/candidate/exams/${planId}/submission`,
     {},
+    withTraceNo({
+      Authorization: `Bearer ${token}`,
+    }),
+  );
+  return response.data;
+}
+
+export async function fetchCandidateScoreReport(token: string, planId: number) {
+  const response = await client.get<CandidateScoreReport>(
+    `/api/candidate/exams/${planId}/score-report`,
     withTraceNo({
       Authorization: `Bearer ${token}`,
     }),
